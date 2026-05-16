@@ -7,6 +7,7 @@ import { UnlockDialog, type UnlockGoal } from "@/components/admin/unlock-dialog"
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 export type EmployeeWithLockedGoals = {
   id: string;
@@ -71,9 +72,11 @@ export function UnlockTool({ adminId, employees }: UnlockToolProps) {
                   <li key={employee.id}>
                     <button
                       type="button"
-                      className={`w-full rounded-md px-3 py-2 text-left text-sm hover:bg-muted ${
-                        selected?.id === employee.id ? "bg-muted font-medium" : ""
-                      }`}
+                      className={cn(
+                        "w-full rounded-md border border-transparent px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
+                        selected?.id === employee.id &&
+                          "border-primary/30 bg-primary/10 font-medium text-primary shadow-sm"
+                      )}
                       onClick={() => setSelectedId(employee.id)}
                     >
                       {employee.name}

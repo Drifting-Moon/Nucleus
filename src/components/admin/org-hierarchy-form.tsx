@@ -116,7 +116,7 @@ export function OrgHierarchyForm({ employees, managers }: OrgHierarchyFormProps)
                       <SelectItem value="none">No manager</SelectItem>
                       {managers.map((manager) => (
                         <SelectItem key={manager.id} value={manager.id}>
-                          {manager.name}
+                          {manager.name || manager.email}
                         </SelectItem>
                       ))}
                     </SelectContent>

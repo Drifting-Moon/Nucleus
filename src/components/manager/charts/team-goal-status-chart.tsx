@@ -60,7 +60,7 @@ export function TeamGoalStatusChart({ data }: TeamGoalStatusChartProps) {
                 {...chartTooltipMotionProps}
                 content={(props) => <StatusTooltip {...(props as RechartsTooltipProps)} />}
               />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="count" maxBarSize={60} radius={[4, 4, 0, 0]}>
                 {data.map((row) => (
                   <Cell key={row.label} fill={row.fill} />
                 ))}

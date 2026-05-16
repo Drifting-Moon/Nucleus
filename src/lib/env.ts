@@ -18,3 +18,13 @@ export function getSupabaseEnv() {
     ),
   };
 }
+
+export function getSupabaseServiceRoleEnv() {
+  return {
+    ...getSupabaseEnv(),
+    supabaseServiceRoleKey: requireEnv(
+      "SUPABASE_SERVICE_ROLE_KEY",
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    ),
+  };
+}

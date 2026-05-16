@@ -5,7 +5,9 @@ import { useState } from "react";
 import { DashboardLoading } from "@/components/dashboard-loading";
 import { AuditLogViewer, type AuditLogEntry } from "@/components/admin/audit-log-viewer";
 import { CompletionDashboard } from "@/components/admin/completion-dashboard";
+import { EscalationCenter } from "@/components/admin/escalation-center";
 import { ExportButton } from "@/components/admin/export-button";
+import { PeopleManagement, type AdminPerson } from "@/components/admin/people-management";
 import { QuarterWindowForm, type QuarterWindowRecord } from "@/components/admin/quarter-window-form";
 import {
   PushSharedGoalForm,
@@ -39,10 +41,16 @@ import type { ScoreBucket } from "@/lib/admin/score-distribution-data";
 import type { ManagerEffectivenessResult } from "@/lib/admin/manager-effectiveness-data";
 import type { QoqTrendSeries } from "@/lib/admin/qoq-chart-data";
 import type { DistributionSlice } from "@/lib/admin/goal-distribution";
+import type {
+  EscalationEvaluationInput,
+  EscalationResult,
+} from "@/lib/admin/escalation-data";
 import { cn } from "@/lib/utils";
 
 const TABS = [
   { id: "completion", label: "Completion" },
+  { id: "people", label: "People" },
+  { id: "escalations", label: "Escalations" },
   { id: "analytics", label: "Analytics" },
   { id: "hierarchy", label: "Org Hierarchy" },
   { id: "windows", label: "Quarter Windows" },
@@ -64,6 +72,7 @@ type AdminTabsProps = {
   sharedGoalEmployees: PushSharedGoalEmployee[];
   orgEmployees: OrgEmployee[];
   orgManagers: OrgManager[];
+  people: AdminPerson[];
   analyticsByThrust: DistributionSlice[];
   analyticsByUom: DistributionSlice[];
   analyticsByStatus: DistributionSlice[];
@@ -76,6 +85,8 @@ type AdminTabsProps = {
   qoqDepartments: string[];
   qoqSeries: QoqTrendSeries;
   managerEffectiveness: ManagerEffectivenessResult;
+  escalationData: EscalationResult;
+  escalationInput: EscalationEvaluationInput;
 };
 
 export function AdminTabs({
@@ -88,6 +99,7 @@ export function AdminTabs({
   sharedGoalEmployees,
   orgEmployees,
   orgManagers,
+  people,
   analyticsByThrust,
   analyticsByUom,
   analyticsByStatus,
@@ -100,6 +112,8 @@ export function AdminTabs({
   qoqDepartments,
   qoqSeries,
   managerEffectiveness,
+  escalationData,
+  escalationInput,
 }: AdminTabsProps) {
   const [active, setActive] = useState<TabId>("completion");
 
@@ -125,6 +139,12 @@ export function AdminTabs({
 
       {active === "completion" && (
         <CompletionDashboard employees={employeeRows} managers={managerRows} />
+      )}
+      {active === "people" && (
+        <PeopleManagement people={people} managers={orgManagers} />
+      )}
+      {active === "escalations" && (
+        <EscalationCenter initialData={escalationData} evaluationInput={escalationInput} />
       )}
       {active === "analytics" && (
         <AnalyticsDashboard

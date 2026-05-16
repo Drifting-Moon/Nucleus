@@ -78,7 +78,13 @@ export function ScoreDistributionChart({ buckets }: ScoreDistributionChartProps)
                   {...chartTooltipMotionProps}
                   content={(props) => <ScoreTooltip {...(props as RechartsTooltipProps)} />}
                 />
-                <Bar dataKey="count" name="Updates" fill={LINE_CHART_COLOR} radius={[4, 4, 0, 0]} />
+                <Bar
+                  dataKey="count"
+                  name="Updates"
+                  fill={LINE_CHART_COLOR}
+                  maxBarSize={60}
+                  radius={[4, 4, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           )}

@@ -60,6 +60,7 @@ Nucleus is optimized for zero-configuration deployment on Vercel.
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
    ```
 4. Start the development server:
    ```bash
@@ -72,8 +73,8 @@ The platform comes pre-configured with three robust personas for hackathon judge
 
 | Role | Email | Password |
 |---|---|---|
-| **Employee** | `employee@test.com` | `password123` |
-| **Manager** | `manager@test.com` | `password123` |
+| **Employee** | `emp1@test.com` | `password123` |
+| **Manager** | `manager1@test.com` | `password123` |
 | **Admin** | `admin@test.com` | `password123` |
 
-*(Note: The login page includes quick-select buttons that automatically pre-fill these credentials for rapid testing).*
+*(Note: The login page includes quick-select buttons that can sign in with these demo credentials for rapid testing).*

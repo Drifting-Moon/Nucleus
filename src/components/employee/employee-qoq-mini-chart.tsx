@@ -88,9 +88,10 @@ export function EmployeeQoqMiniChart({ points }: EmployeeQoqMiniChartProps) {
                 type="monotone"
                 dataKey="displayScore"
                 stroke={LINE_STROKE}
-                strokeWidth={2}
-                dot={{ fill: LINE_STROKE, r: 3 }}
-                connectNulls={false}
+                strokeWidth={3}
+                dot={{ fill: LINE_STROKE, stroke: "var(--background)", strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6 }}
+                connectNulls
               />
             </LineChart>
           </ResponsiveContainer>

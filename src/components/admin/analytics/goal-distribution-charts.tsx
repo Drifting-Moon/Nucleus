@@ -204,14 +204,14 @@ function DonutCard({ title, description, data, colorMode, emptyMessage }: DonutC
             {emptyMessage}
           </p>
         ) : (
-          <ResponsiveContainer width="100%" height={240}>
+          <ResponsiveContainer width="100%" height={270}>
             <PieChart>
               <Pie
                 data={data}
                 dataKey="value"
                 nameKey="name"
-                innerRadius={52}
-                outerRadius={80}
+                innerRadius={66}
+                outerRadius={104}
                 paddingAngle={singleSegment ? 0 : 2}
                 stroke="var(--background)"
                 strokeWidth={2}

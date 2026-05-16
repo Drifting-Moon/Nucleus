@@ -119,6 +119,7 @@ function EmployeeCompletionChart({
           name="Completed"
           stackId="stack"
           fill={COMPLETION_COLORS.done}
+          maxBarSize={60}
           radius={[0, 0, 0, 0]}
         />
         <Bar
@@ -126,8 +127,16 @@ function EmployeeCompletionChart({
           name="Pending"
           stackId="stack"
           fill={COMPLETION_COLORS.pending}
+          maxBarSize={60}
         />
-        <Bar dataKey="na" name="N/A" stackId="stack" fill={COMPLETION_COLORS.na} radius={[4, 4, 0, 0]} />
+        <Bar
+          dataKey="na"
+          name="N/A"
+          stackId="stack"
+          fill={COMPLETION_COLORS.na}
+          maxBarSize={60}
+          radius={[4, 4, 0, 0]}
+        />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -174,12 +183,14 @@ function ManagerReviewChart({ data }: { data: ManagerReviewChartRow[] }) {
           name="Reviews complete"
           stackId="reviews"
           fill={COMPLETION_COLORS.done}
+          maxBarSize={32}
         />
         <Bar
           dataKey="pending"
           name="Pending reviews"
           stackId="reviews"
           fill={COMPLETION_COLORS.pending}
+          maxBarSize={32}
           radius={[0, 4, 4, 0]}
         />
       </BarChart>

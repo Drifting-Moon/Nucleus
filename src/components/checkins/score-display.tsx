@@ -11,7 +11,7 @@ const tierClass: Record<ReturnType<typeof getScoreTier>, string> = {
   green:
     "border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300",
   yellow: "border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300",
-  red: "border-red-500/30 bg-red-500/10 text-red-800 dark:text-red-300",
+  red: "border-red-500/20 bg-red-500/15 text-red-600 dark:text-red-400",
 };
 
 const barClass: Record<ReturnType<typeof getScoreTier>, string> = {

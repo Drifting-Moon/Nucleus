@@ -29,14 +29,21 @@ export default function LoginPage() {
     setPassword("password123");
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const authenticate = async ({
+    loginType,
+    loginEmail,
+    loginPassword,
+  }: {
+    loginType: string;
+    loginEmail: string;
+    loginPassword: string;
+  }) => {
     setLoading(true);
     setError("");
 
     const { data, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+      email: loginEmail,
+      password: loginPassword,
     });
 
     if (authError) {
@@ -45,7 +52,7 @@ export default function LoginPage() {
       return;
     }
 
-    const expectedRole = selectedLoginType.toLowerCase();
+    const expectedRole = loginType.toLowerCase();
     const { data: profile, error: profileError } = await supabase
       .from("users")
       .select("role")
@@ -54,12 +61,21 @@ export default function LoginPage() {
 
     if (profileError || profile?.role !== expectedRole) {
       await supabase.auth.signOut();
-      setError(`This account is not a ${selectedLoginType} account.`);
+      setError(`This account is not a ${loginType} account.`);
       setLoading(false);
       return;
     }
 
     router.replace(`/dashboard/${profile.role}`);
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await authenticate({
+      loginType: selectedLoginType,
+      loginEmail: email,
+      loginPassword: password,
+    });
   };
 
   return (
@@ -122,7 +138,7 @@ export default function LoginPage() {
           <CardFooter>
             <Button type="submit" className="flex items-center justify-center gap-2 w-full" disabled={loading}>
               {loading && <span className="size-4 rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground animate-spin" />}
-              {loading ? "Signing in..." : "Sign in"}
+              {loading ? "Authenticating..." : "Sign in"}
             </Button>
           </CardFooter>
         </form>

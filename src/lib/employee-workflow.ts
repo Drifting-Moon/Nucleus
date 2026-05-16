@@ -54,17 +54,16 @@ export function getWorkflowCurrentIndex(
   if (anySubmitted || !allApproved) return 1;
   if (!allApproved) return 1;
 
-  let index = 2;
+  const latestSubmittedIndex = CHECKIN_ORDER.reduce(
+    (latest, quarter, index) => (quarterSubmitted[quarter] ? index : latest),
+    -1
+  );
 
-  for (const quarter of CHECKIN_ORDER) {
-    if (quarterSubmitted[quarter]) {
-      index += 1;
-    } else {
-      return index;
-    }
+  if (latestSubmittedIndex >= 0) {
+    return Math.min(2 + latestSubmittedIndex + 1, WORKFLOW_STEPS.length - 1);
   }
 
-  return 6;
+  return 2;
 }
 
 export function isWorkflowComplete(

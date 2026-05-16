@@ -75,7 +75,7 @@ export function TeamMemberScoresChart({ data, activeQuarter }: TeamMemberScoresC
                 {...chartTooltipMotionProps}
                 content={(props) => <ScoreTooltip {...(props as RechartsTooltipProps)} />}
               />
-              <Bar dataKey="score" radius={[0, 4, 4, 0]}>
+              <Bar dataKey="score" barSize={32} radius={[0, 4, 4, 0]}>
                 {data.map((row) => (
                   <Cell
                     key={row.name}

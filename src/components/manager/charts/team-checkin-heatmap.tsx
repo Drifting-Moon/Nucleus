@@ -28,6 +28,22 @@ function cellTitle(cell: HeatmapCell) {
   return `${cell.goalTitle}: ${cell.scorePercent}% achievement`;
 }
 
+function cellClass(cell: HeatmapCell) {
+  if (!cell.submitted || cell.scorePercent == null) {
+    return "border-border/50 bg-muted/30 text-muted-foreground";
+  }
+  if (cell.scorePercent === 0) {
+    return "border-border/50 bg-muted/40 text-muted-foreground";
+  }
+  if (cell.scorePercent < 50) {
+    return "border-red-500/20 bg-red-500/15 text-red-600 dark:text-red-400";
+  }
+  if (cell.scorePercent < 100) {
+    return "border-amber-500/25 bg-amber-500/15 text-amber-700 dark:text-amber-300";
+  }
+  return "border-emerald-500/25 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
+}
+
 export function TeamCheckinHeatmap({ rows, maxColumns, quarter }: TeamCheckinHeatmapProps) {
   if (rows.length === 0 || maxColumns === 0) {
     return (
@@ -89,10 +105,9 @@ export function TeamCheckinHeatmap({ rows, maxColumns, quarter }: TeamCheckinHea
                       key={`${row.employeeId}-${cell.goalId}`}
                       title={cellTitle(cell)}
                       className={cn(
-                        "flex min-h-10 items-center justify-center rounded-md border border-border/50 px-1 py-2 text-center font-semibold tabular-nums",
-                        !cell.submitted && "text-muted-foreground"
+                        "flex min-h-10 items-center justify-center rounded-md border px-1 py-2 text-center font-semibold tabular-nums",
+                        cellClass(cell)
                       )}
-                      style={{ backgroundColor: heatmapCellColor(cell) }}
                     >
                       {cellLabel(cell)}
                     </div>

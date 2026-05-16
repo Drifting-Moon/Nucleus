@@ -14,6 +14,10 @@ import {
 } from "@/lib/admin/completion-chart-data";
 import { buildScoreDistribution } from "@/lib/admin/score-distribution-data";
 import { buildManagerEffectiveness } from "@/lib/admin/manager-effectiveness-data";
+import {
+  buildEscalationData,
+  type EscalationEvaluationInput,
+} from "@/lib/admin/escalation-data";
 import { buildQoqTrendSeries } from "@/lib/admin/qoq-chart-data";
 import {
   buildStatusDistribution,
@@ -47,7 +51,7 @@ export default async function AdminDashboard() {
     supabase.from("users").select("id, name, email, department, role, manager_id"),
     supabase
       .from("goals")
-      .select("id, user_id, status, title, uom, target, target_date, weightage, thrust_area"),
+      .select("id, user_id, status, title, uom, target, target_date, weightage, thrust_area, created_at, updated_at"),
     supabase.from("quarterly_updates").select("goal_id, quarter, score, submitted_at"),
     supabase
       .from("audit_logs")
@@ -60,6 +64,42 @@ export default async function AdminDashboard() {
   const managers = (users ?? []).filter((u) => u.role === "manager");
   const allGoals = goals ?? [];
   const allUpdates = updates ?? [];
+  const escalationInput: EscalationEvaluationInput = {
+    users: (users ?? []).map((member) => ({
+      id: member.id,
+      name: member.name,
+      email: member.email,
+      role: member.role,
+      department: member.department,
+      manager_id: member.manager_id,
+    })),
+    goals: allGoals.map((goal) => ({
+      id: goal.id,
+      user_id: goal.user_id,
+      status: goal.status,
+      created_at: goal.created_at,
+      updated_at: goal.updated_at,
+    })),
+    updates: allUpdates.map((update) => ({
+      goal_id: update.goal_id,
+      quarter: update.quarter,
+      submitted_at: update.submitted_at,
+    })),
+    windows: (windows ?? []).map((window) => ({
+      quarter_name: window.quarter_name,
+      start_date: window.start_date,
+      end_date: window.end_date,
+    })),
+    todayIso: new Date().toISOString(),
+  };
+  const escalationData = buildEscalationData(
+    escalationInput.users,
+    escalationInput.goals,
+    escalationInput.updates,
+    escalationInput.windows,
+    undefined,
+    new Date(escalationInput.todayIso)
+  );
 
   const distributionGoals = allGoals.map((goal) => ({
     thrust_area: goal.thrust_area,
@@ -188,6 +228,14 @@ export default async function AdminDashboard() {
           name: manager.name || manager.email || "Unknown",
           email: manager.email || "",
         }))}
+        people={(users ?? []).map((member) => ({
+          id: member.id,
+          name: member.name || member.email || "Unknown",
+          email: member.email || "",
+          role: member.role,
+          department: member.department,
+          manager_id: member.manager_id,
+        }))}
         analyticsByThrust={analyticsByThrust}
         analyticsByUom={analyticsByUom}
         analyticsByStatus={analyticsByStatus}
@@ -200,6 +248,8 @@ export default async function AdminDashboard() {
         qoqDepartments={qoqDepartments}
         qoqSeries={qoqSeries}
         managerEffectiveness={managerEffectiveness}
+        escalationData={escalationData}
+        escalationInput={escalationInput}
       />
     </DashboardShell>
   );
