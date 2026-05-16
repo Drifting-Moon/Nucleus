@@ -15,9 +15,14 @@ const Lottie = dynamic(() => import("lottie-react"), {
 
 export function DashboardLoading({ label = "Loading your dashboard..." }: { label?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[400px] w-full py-12">
+    <div className="flex flex-col items-center justify-center min-h-[400px] w-full py-12 animate-in fade-in duration-500">
       <div className="w-64 h-64 relative flex items-center justify-center">
-         <Lottie animationData={animationData} loop={true} className="w-full h-full" />
+         <Lottie 
+           animationData={animationData} 
+           loop={true} 
+           autoplay={true}
+           className="w-full h-full" 
+         />
       </div>
       {label && <p className="mt-4 text-sm font-medium text-muted-foreground animate-pulse">{label}</p>}
     </div>
