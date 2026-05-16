@@ -4,6 +4,7 @@ export type GoalValidationInput = {
   weightage: number;
   uom: string;
   target: number | "";
+  target_date: string;
 };
 
 export function validateGoals(goals: GoalValidationInput[]) {
@@ -28,7 +29,11 @@ export function validateGoals(goals: GoalValidationInput[]) {
       return "Every goal needs a unit of measurement";
     }
 
-    if (goal.target === "") {
+    if (goal.uom === "timeline" && !goal.target_date) {
+      return "Every timeline goal needs a deadline date";
+    }
+
+    if (goal.uom !== "timeline" && goal.target === "") {
       return "Every goal needs a target value";
     }
 

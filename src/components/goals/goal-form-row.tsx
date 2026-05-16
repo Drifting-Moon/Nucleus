@@ -16,9 +16,11 @@ export type GoalDraft = {
   id?: string;
   thrust_area: string;
   title: string;
+  description: string;
   weightage: number;
   uom: string;
   target: number | "";
+  target_date: string;
   is_shared: boolean;
   status: string;
 };
@@ -64,7 +66,7 @@ export function GoalFormRow({
   };
 
   return (
-    <div className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-[150px_minmax(180px,1fr)_150px_120px_120px_auto] md:items-end">
+    <div className="grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-[150px_minmax(180px,1fr)_150px_140px_120px_auto] md:items-end">
       <div className="space-y-1.5">
         <label className="block text-xs font-medium text-muted-foreground">
           Thrust Area
@@ -95,9 +97,14 @@ export function GoalFormRow({
         </div>
         <Input
           value={goal.title}
-          placeholder="Increase customer retention"
+          placeholder="Goal title"
           disabled={goal.is_shared}
           onChange={(event) => updateGoal({ title: event.target.value })}
+        />
+        <Input
+          value={goal.description}
+          placeholder="Brief description"
+          onChange={(event) => updateGoal({ description: event.target.value })}
         />
       </div>
 
@@ -127,12 +134,16 @@ export function GoalFormRow({
           Target
         </label>
         <Input
-          type="number"
-          min="0"
-          value={goal.target}
-          placeholder="100"
+          type={goal.uom === "timeline" ? "date" : "number"}
+          min={goal.uom === "timeline" ? undefined : "0"}
+          value={goal.uom === "timeline" ? goal.target_date : goal.target}
+          placeholder={goal.uom === "timeline" ? undefined : "100"}
           disabled={goal.is_shared}
-          onChange={(event) => updateGoal({ target: parseNumber(event.target.value) })}
+          onChange={(event) =>
+            goal.uom === "timeline"
+              ? updateGoal({ target: "", target_date: event.target.value })
+              : updateGoal({ target: parseNumber(event.target.value), target_date: "" })
+          }
         />
       </div>
 

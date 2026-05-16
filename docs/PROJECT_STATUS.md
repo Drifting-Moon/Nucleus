@@ -1,6 +1,6 @@
 # Nucleus Project Status
 
-Last updated: 2026-05-16
+Last updated: 2026-05-16T13:11+05:30
 
 ## Project Summary
 
@@ -43,6 +43,7 @@ Next stage: Stage 3 Manager review and approval workflow.
 - Shared `DashboardShell` client component keeps logout interactivity separate from server guards.
 - App metadata title is `Nucleus`.
 - Dashboard header includes a smooth Light/Dark/System theme toggle.
+- Each dashboard shows a role-specific Quick Guide card at the top with a 3-step workflow summary (e.g., Employee: Draft Goals → Submit → Quarterly Check-ins). Built with existing Card + lucide-react, zero new dependencies.
 
 ### Stage 2 Employee Goal Sheet
 
@@ -51,11 +52,14 @@ Next stage: Stage 3 Manager review and approval workflow.
 - Goal rows include:
   - Thrust Area
   - Goal Title
+  - Description
   - Unit of Measurement
   - Target
   - Weightage
   - Delete
 - UoM options are `number`, `percentage`, `timeline`, and `zero_based`.
+- Timeline goals use a native date input and save their deadline to `target_date`.
+- Non-timeline goals use the numeric `target` field.
 - Thrust Area options currently are Business, Customer, Operations, People, and Compliance.
 - Shared goals lock title and target while leaving weightage editable.
 - Weightage indicator shows live `X / 100%`.
@@ -86,7 +90,7 @@ Migration file:
 It defines:
 
 - `public.users`
-- `public.goals`, including `thrust_area`
+- `public.goals`, including `thrust_area`, `description`, and `target_date`
 - `public.quarterly_updates`
 - `public.audit_logs`
 - `public.quarter_windows`
@@ -131,6 +135,13 @@ If the Stage 1 migration was already run before Thrust Area was added, run this 
 
 ```sql
 alter table public.goals add column if not exists thrust_area text;
+```
+
+If the Stage 1 migration was already run before Description and Timeline date support were added, run this in Supabase SQL Editor:
+
+```sql
+alter table public.goals add column if not exists description text;
+alter table public.goals add column if not exists target_date date;
 ```
 
 If the Stage 1 migration was already run before saved-goal delete was added, run this in Supabase SQL Editor:
@@ -180,6 +191,7 @@ Recommended Stage 3 order:
 - Goal sheet: `src/components/goals/goal-sheet.tsx`
 - Goal row: `src/components/goals/goal-form-row.tsx`
 - Weightage indicator: `src/components/goals/weightage-indicator.tsx`
+- Quick guide: `src/components/quick-guide.tsx`
 - Goal validation: `src/lib/validate-goals.ts`
 - Server auth guard: `src/lib/auth.ts`
 - Browser Supabase client: `src/lib/supabase.ts`
@@ -194,5 +206,4 @@ Recommended Stage 3 order:
 - Manager review/approval is not implemented yet.
 - Admin quarter management UI is not implemented yet.
 - RLS policies are intentionally permissive for hackathon progress and should be tightened after core flows work.
-- Timeline UoM currently uses the same numeric target input as other UoM types.
 - Final Thrust Area labels can still be adjusted if Atomberg provides an exact list.

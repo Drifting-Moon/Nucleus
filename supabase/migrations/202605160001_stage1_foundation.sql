@@ -23,9 +23,11 @@ create table if not exists public.goals (
   user_id uuid not null references public.users(id) on delete cascade,
   thrust_area text,
   title text not null,
+  description text,
   weightage integer not null check (weightage >= 10 and weightage <= 100),
   uom text not null check (uom in ('number', 'percentage', 'timeline', 'zero_based')),
   target numeric,
+  target_date date,
   is_locked boolean not null default false,
   is_shared boolean not null default false,
   status text not null default 'draft' check (status in ('draft', 'submitted', 'approved', 'rejected', 'locked')),
@@ -34,6 +36,8 @@ create table if not exists public.goals (
 );
 
 alter table public.goals add column if not exists thrust_area text;
+alter table public.goals add column if not exists description text;
+alter table public.goals add column if not exists target_date date;
 
 create table if not exists public.quarterly_updates (
   id uuid primary key default gen_random_uuid(),

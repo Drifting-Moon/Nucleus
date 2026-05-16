@@ -23,9 +23,11 @@ type GoalRecord = {
   id: string;
   thrust_area: string | null;
   title: string | null;
+  description: string | null;
   weightage: number | null;
   uom: string | null;
   target: number | null;
+  target_date: string | null;
   is_shared: boolean | null;
   status: string | null;
 };
@@ -34,9 +36,11 @@ function createBlankGoal(): GoalDraft {
   return {
     thrust_area: "",
     title: "",
+    description: "",
     weightage: 10,
     uom: "",
     target: "",
+    target_date: "",
     is_shared: false,
     status: "draft",
   };
@@ -137,7 +141,7 @@ export function GoalSheet({ userId }: GoalSheetProps) {
 
       const { data, error: loadError } = await supabase
         .from("goals")
-        .select("id, thrust_area, title, weightage, uom, target, is_shared, status")
+        .select("id, thrust_area, title, description, weightage, uom, target, target_date, is_shared, status")
         .eq("user_id", userId)
         .order("created_at", { ascending: true });
 
@@ -156,9 +160,11 @@ export function GoalSheet({ userId }: GoalSheetProps) {
         id: goal.id,
         thrust_area: goal.thrust_area ?? "",
         title: goal.title ?? "",
+        description: goal.description ?? "",
         weightage: goal.weightage ?? 10,
         uom: goal.uom ?? "",
         target: normalizeTarget(goal.target),
+        target_date: goal.target_date ?? "",
         is_shared: goal.is_shared ?? false,
         status: goal.status ?? "draft",
       }));
@@ -280,10 +286,12 @@ export function GoalSheet({ userId }: GoalSheetProps) {
     for (const goal of goals) {
       const payload = {
         title: goal.title.trim(),
+        description: goal.description.trim() || null,
         thrust_area: goal.thrust_area || null,
         weightage: goal.weightage,
         uom: goal.uom,
-        target: goal.target === "" ? null : goal.target,
+        target: goal.uom === "timeline" || goal.target === "" ? null : goal.target,
+        target_date: goal.uom === "timeline" ? goal.target_date || null : null,
         is_shared: goal.is_shared,
       };
 
@@ -309,7 +317,7 @@ export function GoalSheet({ userId }: GoalSheetProps) {
             ...payload,
             status: "draft",
           })
-          .select("id, thrust_area, title, weightage, uom, target, is_shared, status")
+          .select("id, thrust_area, title, description, weightage, uom, target, target_date, is_shared, status")
           .single();
 
         if (insertError) {
@@ -324,9 +332,11 @@ export function GoalSheet({ userId }: GoalSheetProps) {
           id: savedGoal.id,
           thrust_area: savedGoal.thrust_area ?? "",
           title: savedGoal.title ?? "",
+          description: savedGoal.description ?? "",
           weightage: savedGoal.weightage ?? 10,
           uom: savedGoal.uom ?? "",
           target: normalizeTarget(savedGoal.target),
+          target_date: savedGoal.target_date ?? "",
           is_shared: savedGoal.is_shared ?? false,
           status: savedGoal.status ?? "draft",
         });
@@ -449,9 +459,16 @@ export function GoalSheet({ userId }: GoalSheetProps) {
                       </div>
                       <p className="mt-2 text-sm text-muted-foreground">
                         Thrust Area: {goal.thrust_area || "Not set"} · UoM: {goal.uom || "Not set"} · Target:{" "}
-                        {goal.target === "" ? "Not set" : goal.target} · Weightage:{" "}
+                        {goal.uom === "timeline"
+                          ? goal.target_date || "Not set"
+                          : goal.target === "" ? "Not set" : goal.target} · Weightage:{" "}
                         {goal.weightage}%
                       </p>
+                      {goal.description && (
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          {goal.description}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
