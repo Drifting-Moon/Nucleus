@@ -17,7 +17,7 @@ export type GoalDraft = {
   thrust_area: string;
   title: string;
   description: string;
-  weightage: number;
+  weightage: number | "";
   uom: string;
   target: number | "";
   target_date: string;
@@ -156,8 +156,7 @@ export function GoalFormRow({
           min="10"
           max="100"
           value={goal.weightage}
-          placeholder="10"
-          onChange={(event) => updateGoal({ weightage: Number(event.target.value) })}
+          onChange={(event) => updateGoal({ weightage: event.target.value === "" ? "" : Number(event.target.value) })}
         />
       </div>
 

@@ -1,7 +1,7 @@
 export type GoalValidationInput = {
   thrust_area: string;
   title: string;
-  weightage: number;
+  weightage: number | "";
   uom: string;
   target: number | "";
   target_date: string;
@@ -37,12 +37,12 @@ export function validateGoals(goals: GoalValidationInput[]) {
       return "Every goal needs a target value";
     }
 
-    if (goal.weightage < 10) {
+    if (goal.weightage === "" || goal.weightage < 10) {
       return `"${goal.title}" must be at least 10% weightage`;
     }
   }
 
-  const totalWeightage = goals.reduce((sum, goal) => sum + goal.weightage, 0);
+  const totalWeightage = goals.reduce((sum, goal) => sum + (Number(goal.weightage) || 0), 0);
 
   if (totalWeightage !== 100) {
     return `Total weightage is ${totalWeightage}%. Must equal exactly 100%`;

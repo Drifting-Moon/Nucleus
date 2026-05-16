@@ -18,7 +18,7 @@ Stage 1 foundation is complete enough for the hackathon build.
 
 Stage 2 is complete for the Employee Goal Sheet. The flow has been manually tested in browser against Supabase: add goals, save draft, refresh and reload drafts, delete saved draft rows, submit a valid 100% sheet, and render the submitted read-only view.
 
-Next stage: Stage 3 Manager review and approval workflow.
+Stage 3 is now in progress. The Manager dashboard has a team overview, status badges, summary cards, and a per-employee review route scaffold.
 
 ## Implemented So Far
 
@@ -73,6 +73,29 @@ Next stage: Stage 3 Manager review and approval workflow.
 - Status summary banner shows submitted, approved, locked, and rejected states.
 - Hydration mismatch warning on the goal sheet was patched with a stable hydration-safe render.
 
+### Stage 3 Manager Review
+
+- Manager dashboard is now titled Team Dashboard.
+- Manager dashboard fetches employees where `public.users.manager_id` matches the signed-in manager.
+- Team Overview shows each employee with:
+  - name/email
+  - department
+  - submitted goal count
+  - total goal count
+  - status badge
+- Status badges currently include Not Submitted, Awaiting Review, Approved, and Rejected.
+- Summary cards show Total Team Members, Awaiting Review, and Approved.
+- Review route scaffold exists at `/dashboard/manager/review/[employeeId]`.
+- Review route verifies the employee belongs to the signed-in manager before showing data.
+- Review route displays the employee's goals and allows managers to edit submitted goal targets/deadlines and weightage.
+- Manager edits save back to Supabase only when every goal is at least 10% and total weightage is exactly 100%.
+- Manager can approve submitted goals after confirmation.
+- Approval saves current manager edits, sets submitted goals to `approved`, and marks `is_locked = true` for compatibility with the existing schema.
+- Manager can reject submitted goals with an optional rework reason.
+- Reject sets submitted goals to `rejected` and stores the note on `public.users.rejection_reason`.
+- Employee dashboard shows the rejection reason in the rework banner.
+- Employee resubmission clears `public.users.rejection_reason`.
+
 ### Auth/Routing
 
 - Supabase browser client in `src/lib/supabase.ts`.
@@ -100,6 +123,7 @@ It defines:
 - Basic permissive authenticated policies for hackathon speed, including goal delete for draft cleanup
 - Demo role/profile updates for employee, manager, and admin accounts
 - Employee-to-manager link for `employee@test.com`
+- `public.users.rejection_reason` for future Manager rejection notes
 
 ## Supabase Setup Notes
 
@@ -144,6 +168,21 @@ alter table public.goals add column if not exists description text;
 alter table public.goals add column if not exists target_date date;
 ```
 
+If the Stage 1 migration was already run before Manager rejection-note support was added, run this in Supabase SQL Editor:
+
+```sql
+alter table public.users add column if not exists rejection_reason text;
+
+drop policy if exists "Managers can update direct report rejection reasons" on public.users;
+
+create policy "Managers can update direct report rejection reasons"
+  on public.users
+  for update
+  to authenticated
+  using (manager_id = auth.uid())
+  with check (manager_id = auth.uid());
+```
+
 If the Stage 1 migration was already run before saved-goal delete was added, run this in Supabase SQL Editor:
 
 ```sql
@@ -169,22 +208,20 @@ Known build note:
 
 ## Stage 3 Starting Point
 
-Build the Manager review and approval workflow next.
+Continue the Manager review and approval workflow.
 
-Recommended Stage 3 order:
+Remaining Stage 3 order:
 
-1. Manager dashboard lists employees reporting to the signed-in manager.
-2. Show each employee's submitted goals.
-3. Let manager approve submitted goals.
-4. Let manager reject goals back to employee for rework.
-5. Add inline manager edits for target and weightage if time allows.
-6. On approval, set goals to `approved` / `locked` according to the final flow decision.
+1. Manually test manager approve/reject from the browser.
+2. Add any needed polish to Manager Review after testing.
+3. Decide whether to keep or retire the legacy `is_locked` boolean after hackathon flow stabilizes.
 
 ## Useful Files
 
 - Login page: `src/app/login/page.tsx`
 - Employee dashboard: `src/app/dashboard/employee/page.tsx`
 - Manager dashboard: `src/app/dashboard/manager/page.tsx`
+- Manager review route: `src/app/dashboard/manager/review/[employeeId]/page.tsx`
 - Admin dashboard: `src/app/dashboard/admin/page.tsx`
 - Dashboard shell: `src/components/dashboard-shell.tsx`
 - Theme toggle: `src/components/theme-toggle.tsx`
@@ -193,6 +230,8 @@ Recommended Stage 3 order:
 - Weightage indicator: `src/components/goals/weightage-indicator.tsx`
 - Quick guide: `src/components/quick-guide.tsx`
 - Goal validation: `src/lib/validate-goals.ts`
+- Team overview: `src/components/manager/team-overview.tsx`
+- Employee goal review: `src/components/manager/employee-goal-review.tsx`
 - Server auth guard: `src/lib/auth.ts`
 - Browser Supabase client: `src/lib/supabase.ts`
 - Server Supabase client: `src/lib/supabase-server.ts`

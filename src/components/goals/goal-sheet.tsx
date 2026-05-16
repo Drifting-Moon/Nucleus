@@ -32,6 +32,10 @@ type GoalRecord = {
   status: string | null;
 };
 
+type UserProfileRecord = {
+  rejection_reason: string | null;
+};
+
 function createBlankGoal(): GoalDraft {
   return {
     thrust_area: "",
@@ -66,12 +70,13 @@ function getStatusLabel(status: string) {
   return status;
 }
 
-function getGoalSheetSummary(goals: GoalDraft[]) {
+function getGoalSheetSummary(goals: GoalDraft[], rejectionReason: string) {
   if (goals.some((goal) => goal.status === "rejected")) {
     return {
       className: "border-amber-500/30 bg-amber-500/10 text-amber-800",
       title: "Goals returned for rework",
       description:
+        rejectionReason ||
         "Update the goals below and submit again when the total weightage is exactly 100%.",
     };
   }
@@ -122,14 +127,15 @@ export function GoalSheet({ userId }: GoalSheetProps) {
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const totalWeightage = goals.reduce((sum, goal) => sum + goal.weightage, 0);
+  const totalWeightage = goals.reduce((sum, goal) => sum + (Number(goal.weightage) || 0), 0);
   const canAddMore = goals.length < 8;
   const isReadOnly =
     goals.length > 0 &&
     goals.every((goal) => ["submitted", "approved", "locked"].includes(goal.status));
-  const sheetSummary = getGoalSheetSummary(goals);
+  const sheetSummary = getGoalSheetSummary(goals, rejectionReason);
 
   useEffect(() => {
     let ignore = false;
@@ -144,6 +150,12 @@ export function GoalSheet({ userId }: GoalSheetProps) {
         .select("id, thrust_area, title, description, weightage, uom, target, target_date, is_shared, status")
         .eq("user_id", userId)
         .order("created_at", { ascending: true });
+
+      const { data: profile } = await supabase
+        .from("users")
+        .select("rejection_reason")
+        .eq("id", userId)
+        .single();
 
       if (ignore) {
         return;
@@ -170,6 +182,7 @@ export function GoalSheet({ userId }: GoalSheetProps) {
       }));
 
       setGoals(loadedGoals?.length ? loadedGoals : [createBlankGoal()]);
+      setRejectionReason((profile as UserProfileRecord | null)?.rejection_reason ?? "");
       setLoading(false);
     }
 
@@ -230,7 +243,7 @@ export function GoalSheet({ userId }: GoalSheetProps) {
         return "Every saved draft goal needs a unit of measurement";
       }
 
-      if (goal.weightage < 10 || goal.weightage > 100) {
+      if (goal.weightage === "" || goal.weightage < 10 || goal.weightage > 100) {
         return `"${goal.title}" weightage must be between 10% and 100%`;
       }
     }
@@ -391,6 +404,11 @@ export function GoalSheet({ userId }: GoalSheetProps) {
       return;
     }
 
+    await supabase
+      .from("users")
+      .update({ rejection_reason: null })
+      .eq("id", userId);
+
     setGoals((currentGoals) =>
       currentGoals.map((goal) =>
         ["draft", "rejected"].includes(goal.status)
@@ -399,8 +417,37 @@ export function GoalSheet({ userId }: GoalSheetProps) {
       )
     );
     setConfirmSubmitOpen(false);
+    setRejectionReason("");
     setSubmitting(false);
     setMessage("Goals submitted. Waiting for manager review.");
+  };
+
+  const resetData = async () => {
+    setSaving(true);
+    setError("");
+    setMessage("");
+
+    const supabase = createClient();
+    const { error: deleteError } = await supabase
+      .from("goals")
+      .delete()
+      .eq("user_id", userId);
+
+    await supabase
+      .from("users")
+      .update({ rejection_reason: null })
+      .eq("id", userId);
+
+    setSaving(false);
+
+    if (deleteError) {
+      setError(deleteError.message);
+      return;
+    }
+
+    setGoals([createBlankGoal()]);
+    setRejectionReason("");
+    setMessage("Test data reset successfully.");
   };
 
   return (
@@ -414,7 +461,17 @@ export function GoalSheet({ userId }: GoalSheetProps) {
                 Draft your goals and balance the total weightage before submitting.
               </p>
             </div>
-            {!isReadOnly && <WeightageIndicator total={totalWeightage} />}
+            <div className="flex flex-col items-end gap-2">
+              {!isReadOnly && <WeightageIndicator total={totalWeightage} />}
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={resetData} 
+                disabled={loading || saving || submitting}
+              >
+                Reset Data (Test)
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">

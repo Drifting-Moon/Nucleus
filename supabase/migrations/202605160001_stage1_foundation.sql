@@ -11,12 +11,14 @@ create table if not exists public.users (
   role text not null default 'employee' check (role in ('employee', 'manager', 'admin')),
   department text,
   manager_id uuid references public.users(id) on delete set null,
+  rejection_reason text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
 alter table public.users add column if not exists department text;
 alter table public.users add column if not exists manager_id uuid references public.users(id) on delete set null;
+alter table public.users add column if not exists rejection_reason text;
 
 create table if not exists public.goals (
   id uuid primary key default gen_random_uuid(),
@@ -114,6 +116,14 @@ create policy "Authenticated users can update their own profile"
   to authenticated
   using (auth.uid() = id)
   with check (auth.uid() = id);
+
+drop policy if exists "Managers can update direct report rejection reasons" on public.users;
+create policy "Managers can update direct report rejection reasons"
+  on public.users
+  for update
+  to authenticated
+  using (manager_id = auth.uid())
+  with check (manager_id = auth.uid());
 
 drop policy if exists "Authenticated users can read goals" on public.goals;
 create policy "Authenticated users can read goals"
