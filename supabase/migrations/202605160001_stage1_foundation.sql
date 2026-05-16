@@ -21,6 +21,7 @@ alter table public.users add column if not exists manager_id uuid references pub
 create table if not exists public.goals (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users(id) on delete cascade,
+  thrust_area text,
   title text not null,
   weightage integer not null check (weightage >= 10 and weightage <= 100),
   uom text not null check (uom in ('number', 'percentage', 'timeline', 'zero_based')),
@@ -31,6 +32,8 @@ create table if not exists public.goals (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.goals add column if not exists thrust_area text;
 
 create table if not exists public.quarterly_updates (
   id uuid primary key default gen_random_uuid(),
@@ -129,6 +132,13 @@ create policy "Authenticated users can update goals"
   to authenticated
   using (true)
   with check (true);
+
+drop policy if exists "Authenticated users can delete goals" on public.goals;
+create policy "Authenticated users can delete goals"
+  on public.goals
+  for delete
+  to authenticated
+  using (true);
 
 drop policy if exists "Authenticated users can read quarterly_updates" on public.quarterly_updates;
 create policy "Authenticated users can read quarterly_updates"

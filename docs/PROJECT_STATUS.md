@@ -14,9 +14,11 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 
 ## Current Stage
 
-Stage 1 foundation is mostly complete. The app has authentication wiring, role-based routing, dashboard shells, and the initial Supabase schema migration.
+Stage 1 foundation is complete enough for the hackathon build.
 
-Stage 2 should start with the employee goal sheet.
+Stage 2 is complete for the Employee Goal Sheet. The flow has been manually tested in browser against Supabase: add goals, save draft, refresh and reload drafts, delete saved draft rows, submit a valid 100% sheet, and render the submitted read-only view.
+
+Next stage: Stage 3 Manager review and approval workflow.
 
 ## Implemented So Far
 
@@ -40,6 +42,32 @@ Stage 2 should start with the employee goal sheet.
 - Dashboard pages perform server-side role checks before rendering.
 - Shared `DashboardShell` client component keeps logout interactivity separate from server guards.
 - App metadata title is `Nucleus`.
+- Dashboard header includes a smooth Light/Dark/System theme toggle.
+
+### Stage 2 Employee Goal Sheet
+
+- Status: complete and manually tested.
+- Employee dashboard renders the Goal Sheet.
+- Goal rows include:
+  - Thrust Area
+  - Goal Title
+  - Unit of Measurement
+  - Target
+  - Weightage
+  - Delete
+- UoM options are `number`, `percentage`, `timeline`, and `zero_based`.
+- Thrust Area options currently are Business, Customer, Operations, People, and Compliance.
+- Shared goals lock title and target while leaving weightage editable.
+- Weightage indicator shows live `X / 100%`.
+- Add Goal works and stops at 8 goals.
+- Existing goals load from Supabase for the signed-in employee.
+- Save Draft inserts new goals and updates existing goals without duplicate inserts.
+- Saved draft goals can be deleted from Supabase.
+- Submit Goals runs validation, opens a confirmation dialog, saves drafts, then sets `draft` / `rejected` goals to `submitted`.
+- Submitted, approved, and locked goals render read-only.
+- Rejected goals stay editable and show a rework notice.
+- Status summary banner shows submitted, approved, locked, and rejected states.
+- Hydration mismatch warning on the goal sheet was patched with a stable hydration-safe render.
 
 ### Auth/Routing
 
@@ -58,20 +86,20 @@ Migration file:
 It defines:
 
 - `public.users`
-- `public.goals`
+- `public.goals`, including `thrust_area`
 - `public.quarterly_updates`
 - `public.audit_logs`
 - `public.quarter_windows`
 - `public.handle_new_user()` trigger function
 - `on_auth_user_created` trigger
 - RLS enabled on all main tables
-- Basic permissive authenticated policies for hackathon speed
+- Basic permissive authenticated policies for hackathon speed, including goal delete for draft cleanup
 - Demo role/profile updates for employee, manager, and admin accounts
 - Employee-to-manager link for `employee@test.com`
 
-## Supabase Setup Needed Before Stage 2
+## Supabase Setup Notes
 
-Do this in Supabase before building the goal sheet:
+If setting up from scratch, do this in Supabase:
 
 1. Open Supabase SQL Editor.
 2. Run the contents of:
@@ -99,6 +127,24 @@ Do this in Supabase before building the goal sheet:
 
 Important: do not run old SQL snippets that update `manager_id` without a `WHERE` clause. That would assign the manager to every user.
 
+If the Stage 1 migration was already run before Thrust Area was added, run this in Supabase SQL Editor:
+
+```sql
+alter table public.goals add column if not exists thrust_area text;
+```
+
+If the Stage 1 migration was already run before saved-goal delete was added, run this in Supabase SQL Editor:
+
+```sql
+drop policy if exists "Authenticated users can delete goals" on public.goals;
+
+create policy "Authenticated users can delete goals"
+  on public.goals
+  for delete
+  to authenticated
+  using (true);
+```
+
 ## Verification Status
 
 Latest local verification:
@@ -110,22 +156,18 @@ Known build note:
 
 - Next.js 16 warns that the `middleware.ts` file convention is deprecated in favor of the newer proxy convention. It is only a warning right now and does not block the app.
 
-## Stage 2 Starting Point
+## Stage 3 Starting Point
 
-Build the Employee Goal Sheet first.
+Build the Manager review and approval workflow next.
 
-Recommended implementation order:
+Recommended Stage 3 order:
 
-1. Create a goal sheet UI on `/dashboard/employee`.
-2. Let employee add/edit draft goals.
-3. Enforce validation before submit:
-   - maximum 8 goals
-   - each goal weightage at least 10
-   - total weightage exactly 100
-   - required UoM: `number`, `percentage`, `timeline`, or `zero_based`
-4. Save drafts to `public.goals`.
-5. Submit goals by setting `status = 'submitted'`.
-6. Keep manager/admin flows minimal until employee create/submit is solid.
+1. Manager dashboard lists employees reporting to the signed-in manager.
+2. Show each employee's submitted goals.
+3. Let manager approve submitted goals.
+4. Let manager reject goals back to employee for rework.
+5. Add inline manager edits for target and weightage if time allows.
+6. On approval, set goals to `approved` / `locked` according to the final flow decision.
 
 ## Useful Files
 
@@ -134,6 +176,11 @@ Recommended implementation order:
 - Manager dashboard: `src/app/dashboard/manager/page.tsx`
 - Admin dashboard: `src/app/dashboard/admin/page.tsx`
 - Dashboard shell: `src/components/dashboard-shell.tsx`
+- Theme toggle: `src/components/theme-toggle.tsx`
+- Goal sheet: `src/components/goals/goal-sheet.tsx`
+- Goal row: `src/components/goals/goal-form-row.tsx`
+- Weightage indicator: `src/components/goals/weightage-indicator.tsx`
+- Goal validation: `src/lib/validate-goals.ts`
 - Server auth guard: `src/lib/auth.ts`
 - Browser Supabase client: `src/lib/supabase.ts`
 - Server Supabase client: `src/lib/supabase-server.ts`
@@ -143,9 +190,9 @@ Recommended implementation order:
 
 ## Current Limitations
 
-- The dashboards are still placeholders.
-- The goal sheet is not implemented yet.
+- Manager and Admin dashboards are still placeholders.
 - Manager review/approval is not implemented yet.
 - Admin quarter management UI is not implemented yet.
 - RLS policies are intentionally permissive for hackathon progress and should be tightened after core flows work.
-- The SQL migration has been added to the repo, but it must still be applied in Supabase.
+- Timeline UoM currently uses the same numeric target input as other UoM types.
+- Final Thrust Area labels can still be adjusted if Atomberg provides an exact list.
