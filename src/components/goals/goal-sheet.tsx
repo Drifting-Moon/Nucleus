@@ -16,12 +16,12 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { GoalDraft, GoalFormRow } from "@/components/goals/goal-form-row";
+import { LockedGoalCard } from "@/components/goals/locked-goal-card";
 import { WeightageIndicator } from "@/components/goals/weightage-indicator";
 import { createClient } from "@/lib/supabase";
 import { hasLockedGoals } from "@/lib/goal-metrics";
 import { validateGoals } from "@/lib/validate-goals";
 import { formatDateTime } from "@/lib/format-datetime";
-import { Badge } from "@/components/ui/badge";
 
 const LOCKED_STATUSES = ["approved", "locked"] as const;
 const ACTIVE_SHEET_STATUSES = ["draft", "rejected", "submitted"] as const;
@@ -623,30 +623,18 @@ export function GoalSheet({ userId, goalSettingOpen }: GoalSheetProps) {
           {!loading && isReadOnly ? (
             <div className="space-y-3">
               {goals.map((goal) => (
-                <div key={goal.id} className="rounded-lg border bg-card p-4">
-                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-medium">{goal.title}</h3>
-                        <Badge variant="outline">
-                          {getStatusLabel(goal.status)}
-                        </Badge>
-                      </div>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        Thrust Area: {goal.thrust_area || "Not set"} · UoM: {goal.uom || "Not set"} · Target:{" "}
-                        {goal.uom === "timeline"
-                          ? goal.target_date || "Not set"
-                          : goal.target === "" ? "Not set" : goal.target} · Weightage:{" "}
-                        {goal.weightage}%
-                      </p>
-                      {goal.description && (
-                        <p className="mt-2 text-sm text-muted-foreground">
-                          {goal.description}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <LockedGoalCard
+                  key={goal.id}
+                  title={goal.title}
+                  status={goal.status}
+                  statusLabel={getStatusLabel(goal.status)}
+                  thrustArea={goal.thrust_area}
+                  uom={goal.uom}
+                  target={goal.target}
+                  targetDate={goal.target_date}
+                  weightage={goal.weightage}
+                  description={goal.description}
+                />
               ))}
             </div>
           ) : null}
@@ -680,26 +668,26 @@ export function GoalSheet({ userId, goalSettingOpen }: GoalSheetProps) {
             </div>
           ) : null}
 
-          {!isReadOnly && (
-            <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-muted-foreground">
-                {goals.length} / 8 goals added
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="outline" onClick={addGoal} disabled={!canAddMore || saving || submitting}>
-                  <Plus />
-                  Add Goal
-                </Button>
-                <Button type="button" variant="outline" onClick={() => saveDraft()} disabled={loading || saving || submitting}>
-                  {saving ? "Saving..." : "Save Draft"}
-                </Button>
-                <Button type="button" onClick={requestSubmit} disabled={loading || saving || submitting}>
-                  Submit Goals
-                </Button>
-              </div>
-            </div>
-          )}
         </CardContent>
+        {!isReadOnly ? (
+          <div className="sticky bottom-0 z-10 flex flex-col gap-3 border-t bg-background/90 px-6 py-4 backdrop-blur-md print:hidden sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              {goals.length} / 8 goals added
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" onClick={addGoal} disabled={!canAddMore || saving || submitting}>
+                <Plus />
+                Add Goal
+              </Button>
+              <Button type="button" variant="outline" onClick={() => saveDraft()} disabled={loading || saving || submitting}>
+                {saving ? "Saving..." : "Save Draft"}
+              </Button>
+              <Button type="button" onClick={requestSubmit} disabled={loading || saving || submitting}>
+                Submit Goals
+              </Button>
+            </div>
+          </div>
+        ) : null}
       </Card>
 
       <Dialog open={confirmSubmitOpen} onOpenChange={setConfirmSubmitOpen}>

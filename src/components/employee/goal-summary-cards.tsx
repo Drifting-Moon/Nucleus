@@ -44,22 +44,35 @@ export function GoalSummaryCards({ goals, activeQuarter, updates }: GoalSummaryC
   }
 
   const items = [
-    { label: "Goals in sheet", value: String(goalsInSheet) },
+    { label: "Goals in sheet", value: String(goalsInSheet), highlight: false, warn: false },
     {
       label: weightageSummary.label,
       value: `${weightageSummary.total}%`,
+      highlight: false,
       warn: goalsInSheet > 0 && !weightageSummary.isValid,
     },
-    { label: "Approved / locked", value: String(approvedCount) },
-    { label: "Quarter status", value: quarterStatus },
+    { label: "Approved / locked", value: String(approvedCount), highlight: false, warn: false },
+    { label: "Quarter status", value: quarterStatus, highlight: true, warn: false },
   ];
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 print:grid-cols-4">
       {items.map((item) => (
-        <Card key={item.label} size="sm">
+        <Card
+          key={item.label}
+          size="sm"
+          className={cn(
+            item.highlight &&
+              "border-primary/40 bg-primary/5 shadow-sm ring-1 ring-primary/20"
+          )}
+        >
           <CardHeader>
-            <CardTitle className="text-sm font-normal text-muted-foreground">
+            <CardTitle
+              className={cn(
+                "text-sm font-normal",
+                item.highlight ? "text-primary" : "text-muted-foreground"
+              )}
+            >
               {item.label}
             </CardTitle>
           </CardHeader>
@@ -67,7 +80,8 @@ export function GoalSummaryCards({ goals, activeQuarter, updates }: GoalSummaryC
             <p
               className={cn(
                 "text-xl font-semibold",
-                item.warn && "text-amber-700"
+                item.warn && "text-amber-700 dark:text-amber-400",
+                item.highlight && "text-primary"
               )}
             >
               {item.value}

@@ -2,6 +2,7 @@ import { CheckinForm, CheckinUpdateRecord } from "@/components/checkins/checkin-
 import type { CheckinGoal } from "@/components/checkins/checkin-row";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getActiveWindow, getNextWindow, type QuarterWindow } from "@/lib/get-active-window";
+import { formatDisplayDate } from "@/lib/format-date";
 import { QUARTER_LABELS } from "@/lib/quarter-labels";
 
 type CheckinGateProps = {
@@ -27,7 +28,8 @@ export function CheckinGate({ windows, goals, updates, blockedReason }: CheckinG
             <>
               <p className="font-medium">Check-ins are closed for now</p>
               <p className="mt-2 text-sm text-muted-foreground">
-                {QUARTER_LABELS[nextWindow.quarter_name]} opens on {nextWindow.start_date}.
+                {QUARTER_LABELS[nextWindow.quarter_name]} opens on{" "}
+                {formatDisplayDate(nextWindow.start_date)}.
               </p>
             </>
           ) : (

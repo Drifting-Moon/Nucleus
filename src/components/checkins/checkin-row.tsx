@@ -9,6 +9,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScoreDisplay } from "@/components/checkins/score-display";
+import { ScoreFormulaHint } from "@/components/score-formula-hint";
+import { formatGoalTarget } from "@/lib/format-goal-target";
 import { calculateScore } from "@/lib/calculate-score";
 
 export type CheckinGoal = {
@@ -40,16 +42,6 @@ const statusOptions = [
   { value: "completed", label: "Completed" },
 ] as const;
 
-function formatTarget(goal: CheckinGoal) {
-  if (goal.uom === "timeline") {
-    return goal.target_date || "Not set";
-  }
-  if (goal.uom === "percentage") {
-    return goal.target !== null ? `${goal.target}%` : "Not set";
-  }
-  return goal.target ?? "Not set";
-}
-
 export function CheckinRow({ goal, row, readOnly, onChange }: CheckinRowProps) {
   const achievementValue = row.achievement === "" ? null : Number(row.achievement);
   const score = calculateScore({
@@ -66,7 +58,7 @@ export function CheckinRow({ goal, row, readOnly, onChange }: CheckinRowProps) {
       <div className="space-y-1 md:col-span-2">
         <p className="font-medium">{goal.title || "Untitled goal"}</p>
         <p className="text-sm text-muted-foreground">
-          Target: {formatTarget(goal)} · UoM: {goal.uom || "Not set"}
+          Target: {formatGoalTarget(goal.uom, goal.target, goal.target_date)} · UoM: {goal.uom || "Not set"}
         </p>
       </div>
 
@@ -120,6 +112,7 @@ export function CheckinRow({ goal, row, readOnly, onChange }: CheckinRowProps) {
       <div className="flex items-center gap-2 md:col-span-2">
         <span className="text-sm text-muted-foreground">Score:</span>
         <ScoreDisplay score={score} />
+        <ScoreFormulaHint uom={goal.uom} scoreDirection={goal.score_direction} />
       </div>
     </div>
   );

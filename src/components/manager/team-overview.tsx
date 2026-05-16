@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { UserAvatar } from "@/components/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 type TeamMemberStatus = "not_submitted" | "awaiting_review" | "approved" | "rejected";
 
@@ -75,6 +77,7 @@ export function TeamOverview({ members }: TeamOverviewProps) {
 
   const awaitingReview = filtered.filter((member) => member.status === "awaiting_review").length;
   const approved = filtered.filter((member) => member.status === "approved").length;
+  const nothingToReview = members.length > 0 && awaitingReview === 0;
 
   return (
     <div className="space-y-4">
@@ -147,32 +150,41 @@ export function TeamOverview({ members }: TeamOverviewProps) {
             </div>
           ) : (
             <div className="space-y-3">
+              {nothingToReview ? (
+                <p className="rounded-lg border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                  Nothing to review right now. Check back when your team submits their goal sheets.
+                </p>
+              ) : null}
               {filtered.map((member) => (
-                <div
+                <Link
                   key={member.id}
-                  className="flex flex-col gap-3 rounded-lg border p-4 md:flex-row md:items-center md:justify-between"
+                  href={`/dashboard/manager/review/${member.id}`}
+                  className="flex flex-col gap-3 rounded-lg border p-4 transition-colors hover:border-primary/40 hover:bg-muted/30 md:flex-row md:items-center md:justify-between"
                 >
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-medium">{member.name || member.email}</h3>
-                      <Badge variant={statusVariants[member.status]}>
-                        {statusLabels[member.status]}
-                      </Badge>
+                  <div className="flex items-start gap-3">
+                    <UserAvatar name={member.name || member.email} size="sm" />
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-medium">{member.name || member.email}</h3>
+                        <Badge variant={statusVariants[member.status]}>
+                          {statusLabels[member.status]}
+                        </Badge>
+                      </div>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {member.department || "No department"} · {member.submittedCount} submitted /{" "}
+                        {member.totalGoals} total goals
+                      </p>
                     </div>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {member.department || "No department"} · {member.submittedCount} submitted /{" "}
-                      {member.totalGoals} total goals
-                    </p>
                   </div>
-                  <Button
-                    render={<Link href={`/dashboard/manager/review/${member.id}`} />}
-                    nativeButton={false}
-                    variant={member.status === "not_submitted" ? "outline" : "default"}
-                    size="sm"
+                  <span
+                    className={cn(
+                      "text-sm font-medium",
+                      member.status === "awaiting_review" ? "text-primary" : "text-muted-foreground"
+                    )}
                   >
-                    Review
-                  </Button>
-                </div>
+                    Review →
+                  </span>
+                </Link>
               ))}
             </div>
           )}

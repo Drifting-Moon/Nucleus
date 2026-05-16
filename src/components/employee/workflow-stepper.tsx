@@ -35,10 +35,14 @@ export function WorkflowStepper({ goals, quarterSubmitted }: WorkflowStepperProp
                 ) : null}
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5",
-                    isComplete && "border-emerald-500/40 bg-emerald-500/10 text-emerald-800",
-                    isCurrent && "border-primary bg-primary/10 font-medium text-primary",
-                    !isComplete && !isCurrent && "border-border text-muted-foreground"
+                    "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 transition-colors",
+                    isComplete &&
+                      "border-emerald-500/40 bg-emerald-500/10 font-medium text-emerald-800 dark:text-emerald-300",
+                    isCurrent &&
+                      "border-primary bg-primary font-semibold text-primary-foreground shadow-sm ring-2 ring-primary/30",
+                    !isComplete &&
+                      !isCurrent &&
+                      "border-border bg-muted/30 text-muted-foreground"
                   )}
                 >
                   {isComplete ? <Check className="size-3" /> : null}

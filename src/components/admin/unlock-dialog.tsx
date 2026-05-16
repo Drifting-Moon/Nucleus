@@ -77,7 +77,6 @@ export function UnlockDialog({ open, onOpenChange, goal, adminId, onSaved }: Unl
       target_date: goal.uom === "timeline" ? targetDate : null,
       weightage,
       status: "locked" as const,
-      is_locked: true,
     };
 
     const { error } = await supabase.from("goals").update(payload).eq("id", goal.id);

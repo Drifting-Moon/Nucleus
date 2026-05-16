@@ -175,7 +175,7 @@ export function EmployeeGoalReview({
     const supabase = createClient();
     const { error: approveError } = await supabase
       .from("goals")
-      .update({ status: "approved", is_locked: true })
+      .update({ status: "locked" })
       .in("id", submittedGoalIds)
       .eq("status", "submitted");
 
@@ -188,7 +188,7 @@ export function EmployeeGoalReview({
     setReviewGoals((currentGoals) =>
       currentGoals.map((goal) =>
         submittedGoalIds.includes(goal.id)
-          ? { ...goal, status: "approved" }
+          ? { ...goal, status: "locked" }
           : goal
       )
     );

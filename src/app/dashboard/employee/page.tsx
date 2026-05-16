@@ -9,7 +9,7 @@ import { QuickGuide } from "@/components/quick-guide";
 import { Separator } from "@/components/ui/separator";
 import { requireRole } from "@/lib/auth";
 import { isQuarterSubmitted } from "@/lib/employee-workflow";
-import { areAllGoalsApproved, getWorkflowGoals } from "@/lib/goal-metrics";
+import { getWorkflowGoals } from "@/lib/goal-metrics";
 import {
   getActiveWindow,
   isGoalSettingOpen,
@@ -68,7 +68,10 @@ export default async function EmployeeDashboard() {
     annual: isQuarterSubmitted("annual", approvedGoalIds, allUpdates ?? [], allGoalsList),
   } satisfies Record<CheckinQuarter, boolean>;
 
-  const canCheckIn = areAllGoalsApproved(allGoalsList);
+  const hasPendingGoals = allGoalsList.some(
+    (goal) => goal.status === "draft" || goal.status === "submitted"
+  );
+  const canCheckIn = approvedGoalIds.length > 0 && !hasPendingGoals;
 
   let checkinUpdates: CheckinUpdateRecord[] = [];
 

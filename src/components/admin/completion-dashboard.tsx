@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { StatusCell } from "@/components/admin/status-cell";
+import { UserAvatar } from "@/components/user-avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type {
@@ -61,7 +62,12 @@ export function CompletionDashboard({ employees, managers }: CompletionDashboard
               <tbody>
                 {employees.map((row) => (
                   <tr key={row.id} className="border-b last:border-0">
-                    <td className="py-2 pr-4">{row.name}</td>
+                    <td className="py-2 pr-4">
+                      <div className="flex items-center gap-2">
+                        <UserAvatar name={row.name} size="sm" />
+                        <span>{row.name}</span>
+                      </div>
+                    </td>
                     <td className="py-2 pr-4 text-muted-foreground">
                       {row.department || "—"}
                     </td>
@@ -115,7 +121,12 @@ export function CompletionDashboard({ employees, managers }: CompletionDashboard
               <tbody>
                 {managers.map((row) => (
                   <tr key={row.id} className="border-b last:border-0">
-                    <td className="py-2 pr-4">{row.name}</td>
+                    <td className="py-2 pr-4">
+                      <div className="flex items-center gap-2">
+                        <UserAvatar name={row.name} size="sm" />
+                        <span>{row.name}</span>
+                      </div>
+                    </td>
                     <td className="py-2 pr-4 text-muted-foreground">
                       {row.department || "—"}
                     </td>

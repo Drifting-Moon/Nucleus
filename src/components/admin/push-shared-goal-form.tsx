@@ -138,7 +138,6 @@ export function PushSharedGoalForm({ adminId, employees }: PushSharedGoalFormPro
       target_date: uom === "timeline" ? targetDate : null,
       weightage,
       is_shared: true,
-      is_locked: false,
       status: "draft" as const,
       score_direction: uom === "zero_based" ? "higher" : scoreDirection,
     }));
