@@ -3,17 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { Loader2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
-import dynamic from "next/dynamic";
-import friesData from "../../../public/fries.json";
-
-const Fries = dynamic(() => import("lottie-react"), { 
-  ssr: false,
-});
 
 const loginTypes = [
   { label: "Employee", email: "employee@test.com" },
@@ -66,19 +59,14 @@ export default function LoginPage() {
       return;
     }
 
-    // Session is now set automatically via cookies.
-    // The middleware will read the role and redirect, so just push to root.
-    router.push("/");
-    router.refresh();
+    router.replace(`/dashboard/${profile.role}`);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4 relative overflow-hidden">
       {loading && (
         <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/60 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="w-64 h-64">
-            <Fries animationData={friesData} loop={true} />
-          </div>
+          <div className="size-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
           <p className="mt-4 text-xl font-bold tracking-tight animate-pulse text-primary">
             Signing you in...
           </p>
@@ -133,11 +121,7 @@ export default function LoginPage() {
           </CardContent>
           <CardFooter>
             <Button type="submit" className="flex items-center justify-center gap-2 w-full" disabled={loading}>
-              {loading && (
-                <div className="w-10 h-10">
-                  <Fries animationData={friesData} loop={true} />
-                </div>
-              )}
+              {loading && <span className="size-4 rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground animate-spin" />}
               {loading ? "Signing in..." : "Sign in"}
             </Button>
           </CardFooter>

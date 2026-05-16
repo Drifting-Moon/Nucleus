@@ -6,6 +6,11 @@ import {
   Legend,
   Pie,
   PieChart,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
@@ -36,6 +41,20 @@ type DonutCardProps = {
   emptyMessage: string;
 };
 
+type RadarRow = {
+  name: string;
+  value: number;
+  percent: number;
+};
+
+const THRUST_RADAR_ORDER = [
+  "Business",
+  "Customer",
+  "Operations",
+  "People",
+  "Compliance",
+] as const;
+
 function DistributionTooltip({
   active,
   payload,
@@ -52,6 +71,25 @@ function DistributionTooltip({
       <p className="font-medium">{item.name}</p>
       <p className="text-muted-foreground">
         {value} goal{value === 1 ? "" : "s"} ({pct}%)
+      </p>
+    </ChartTooltipBox>
+  );
+}
+
+function ThrustRadarTooltip({
+  active,
+  payload,
+  chartTotal,
+}: RechartsTooltipProps & { chartTotal: number }) {
+  if (!active || !payload?.length) return null;
+
+  const row = payload[0].payload as RadarRow;
+
+  return (
+    <ChartTooltipBox active={active}>
+      <p className="font-medium">{row.name}</p>
+      <p className="text-muted-foreground">
+        {row.value} goal{row.value === 1 ? "" : "s"} ({row.percent}% of {chartTotal})
       </p>
     </ChartTooltipBox>
   );
@@ -79,6 +117,74 @@ function DonutCenterLabel({
         All {segmentName}
       </tspan>
     </text>
+  );
+}
+
+function ThrustRadarCard({ data, totalGoals }: { data: DistributionSlice[]; totalGoals: number }) {
+  const counts = new Map(data.map((slice) => [slice.name, slice.value]));
+  const extraThrusts = data
+    .map((slice) => slice.name)
+    .filter((name) => !THRUST_RADAR_ORDER.includes(name as (typeof THRUST_RADAR_ORDER)[number]));
+  const chartData: RadarRow[] = [...THRUST_RADAR_ORDER, ...extraThrusts].map((name) => {
+    const value = counts.get(name) ?? 0;
+
+    return {
+      name,
+      value,
+      percent: totalGoals > 0 ? Math.round((value / totalGoals) * 100) : 0,
+    };
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Strategic thrust coverage</CardTitle>
+        <CardDescription>
+          Radar view of where goals are concentrated across business priorities.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {totalGoals === 0 ? (
+          <p className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+            No goals in the system yet.
+          </p>
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <RadarChart data={chartData} margin={{ top: 8, right: 48, bottom: 8, left: 48 }}>
+              <PolarGrid className="stroke-border/70" />
+              <PolarAngleAxis
+                dataKey="name"
+                tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+              />
+              <PolarRadiusAxis
+                angle={90}
+                axisLine={false}
+                tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
+                tickCount={4}
+              />
+              <Tooltip
+                {...chartTooltipMotionProps}
+                cursor={false}
+                content={(props) => (
+                  <ThrustRadarTooltip
+                    {...(props as RechartsTooltipProps)}
+                    chartTotal={totalGoals}
+                  />
+                )}
+              />
+              <Radar
+                dataKey="value"
+                name="Goals"
+                stroke="var(--analytics-blue)"
+                fill="var(--analytics-blue)"
+                fillOpacity={0.22}
+                strokeWidth={2}
+              />
+            </RadarChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -170,6 +276,7 @@ export function GoalDistributionCharts({
           employees.
         </p>
       </div>
+      <ThrustRadarCard data={byThrust} totalGoals={totalGoals} />
       <div className="grid gap-4 lg:grid-cols-3">
         <DonutCard
           title="By thrust area"

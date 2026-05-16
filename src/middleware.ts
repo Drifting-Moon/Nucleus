@@ -31,34 +31,22 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
 
-  // Protect dashboard routes
-  if (pathname.startsWith('/dashboard')) {
-    if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
+  async function getUserRole() {
+    if (!user) return null;
 
-    // Get the user's role from the public.users table
     const { data: profile } = await supabase
       .from('users')
       .select('role')
       .eq('id', user.id)
       .single();
 
-    const role = profile?.role;
+    return profile?.role ?? null;
+  }
 
-    if (!role) {
+  // Protect dashboard routes. Role enforcement happens in each dashboard page via requireRole().
+  if (pathname.startsWith('/dashboard')) {
+    if (!user) {
       return NextResponse.redirect(new URL('/login', request.url));
-    }
-
-    // Enforce role-based access
-    if (pathname.startsWith('/dashboard/employee') && role !== 'employee') {
-      return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url));
-    }
-    if (pathname.startsWith('/dashboard/manager') && role !== 'manager') {
-      return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url));
-    }
-    if (pathname.startsWith('/dashboard/admin') && role !== 'admin') {
-      return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url));
     }
   }
 
@@ -67,22 +55,15 @@ export async function middleware(request: NextRequest) {
     if (!user) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
-    const { data: profile } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-    return NextResponse.redirect(new URL(`/dashboard/${profile?.role || 'employee'}`, request.url));
+
+    const role = await getUserRole();
+    return NextResponse.redirect(new URL(`/dashboard/${role || 'employee'}`, request.url));
   }
 
   // Redirect logged-in users away from login page
   if (pathname === '/login' && user) {
-    const { data: profile } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-    return NextResponse.redirect(new URL(`/dashboard/${profile?.role || 'employee'}`, request.url));
+    const role = await getUserRole();
+    return NextResponse.redirect(new URL(`/dashboard/${role || 'employee'}`, request.url));
   }
 
   return supabaseResponse;
