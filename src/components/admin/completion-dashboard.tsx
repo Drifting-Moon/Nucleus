@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { AlertTriangle } from "lucide-react";
 import { StatusCell } from "@/components/admin/status-cell";
 import { UserAvatar } from "@/components/user-avatar";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,10 @@ type CompletionDashboardProps = {
 export function CompletionDashboard({ employees, managers }: CompletionDashboardProps) {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
+  const escalationCount = useMemo(
+    () => employees.filter((row) => row.needsEscalation).length,
+    [employees]
+  );
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -36,6 +41,21 @@ export function CompletionDashboard({ employees, managers }: CompletionDashboard
           {refreshing ? "Refreshing…" : "Refresh"}
         </Button>
       </div>
+
+      {escalationCount > 0 ? (
+        <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+          <div>
+            <p className="font-medium text-destructive">
+              {escalationCount} employee{escalationCount === 1 ? "" : "s"} need attention
+            </p>
+            <p className="mt-0.5 text-muted-foreground">
+              Goal-setting has ended but goals are not fully submitted or approved. Rows are
+              highlighted below.
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <Card>
         <CardHeader>
@@ -61,7 +81,14 @@ export function CompletionDashboard({ employees, managers }: CompletionDashboard
               </thead>
               <tbody>
                 {employees.map((row) => (
-                  <tr key={row.id} className="border-b last:border-0">
+                  <tr
+                    key={row.id}
+                    className={
+                      row.needsEscalation
+                        ? "border-b border-destructive/20 bg-destructive/5 last:border-0"
+                        : "border-b last:border-0"
+                    }
+                  >
                     <td className="py-2 pr-4">
                       <div className="flex items-center gap-2">
                         <UserAvatar name={row.name} size="sm" />

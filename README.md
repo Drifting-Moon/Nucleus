@@ -16,6 +16,37 @@ Select the matching role on the login screen.
 
 _Add your Vercel deployment URL here after `vercel deploy`._
 
+## Evaluator demo script (~5 minutes)
+
+Run these steps in order so every role sees the full BRD flow:
+
+1. **Admin** — Log in → **Quarter Windows** → set `goal_setting` and `q1` so **today** falls inside both date ranges → Save.
+2. **Employee** — Log in → add 3–5 goals (each ≥10% weightage, **total = 100%**) → **Submit Goals**.
+3. **Manager** — Log in → **Goal Review** tab → open the employee → **Approve Goals** (button enables at 100% on submitted set).
+4. **Employee** — Refresh → **Quarterly Check-ins** → enter achievement + status → submit for the active quarter.
+5. **Manager** — **Quarterly Feedback** tab → open employee → save manager comment.
+6. **Admin** — **Completion** tab (escalations highlighted) → **Analytics** → **Export** CSV.
+
+Optional: run `supabase/seed/demo_seed.sql` on a clean employee account for pre-locked goals and sample check-ins.
+
+### BRD checklist (Phase 1 & 2)
+
+| Rule | Where enforced |
+| ---- | -------------- |
+| Max 8 goals | `src/lib/validate-goals.ts` + UI |
+| Min 10% per goal | `validate-goals.ts` + DB constraint |
+| Total weightage = 100% to submit | `validate-goals.ts` + weightage indicator |
+| One-time goal submit → manager approve | Employee goal sheet + manager review |
+| Check-ins on locked goals only | `CheckinGate` on employee dashboard |
+| Auto score by UoM | `src/lib/calculate-score.ts` |
+
+### Manual edge-case checks
+
+- Submit with 99% or 101% total → blocked with clear message
+- 8 goals at 12.5% each → allowed
+- Manager reject → employee rework → resubmit
+- Goal-setting window closed → employee cannot edit (unless rework)
+
 ## Local development
 
 ```bash
@@ -51,6 +82,7 @@ Set quarter window dates in **Admin → Quarter Windows** so today falls inside 
 
 ```bash
 pnpm lint
+pnpm test
 pnpm build
 ```
 

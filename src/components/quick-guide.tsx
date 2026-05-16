@@ -13,10 +13,11 @@ interface Step {
 interface QuickGuideProps {
   role: "Employee" | "Manager" | "Admin";
   steps: Step[];
+  defaultOpen?: boolean;
 }
 
-export function QuickGuide({ role, steps }: QuickGuideProps) {
-  const [open, setOpen] = useState(true);
+export function QuickGuide({ role, steps, defaultOpen = true }: QuickGuideProps) {
+  const [open, setOpen] = useState(defaultOpen);
 
   return (
     <Card className="mb-6 border-border/60 bg-muted/30 print:hidden">

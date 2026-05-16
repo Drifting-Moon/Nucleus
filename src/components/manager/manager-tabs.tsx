@@ -6,6 +6,16 @@ import { TeamOverview } from "@/components/manager/team-overview";
 import { TeamCheckinOverview } from "@/components/manager/team-checkin-overview";
 import type { CheckinQuarter } from "@/lib/get-active-window";
 import type { TeamCheckinMember } from "@/components/manager/team-checkin-overview";
+import { TeamCheckinHeatmap } from "@/components/manager/charts/team-checkin-heatmap";
+import { TeamCheckinPipelineChart } from "@/components/manager/charts/team-checkin-pipeline-chart";
+import { TeamGoalStatusChart } from "@/components/manager/charts/team-goal-status-chart";
+import { TeamMemberScoresChart } from "@/components/manager/charts/team-member-scores-chart";
+import type {
+  CheckinPipelineRow,
+  HeatmapRow,
+  MemberScoreChartRow,
+  StatusChartRow,
+} from "@/lib/manager/team-chart-data";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -20,6 +30,11 @@ type ManagerTabsProps = {
   activeQuarter: CheckinQuarter | null;
   checkinMembers: TeamCheckinMember[] | null;
   teamAvgScore?: number | null;
+  goalStatusChart: StatusChartRow[];
+  memberScoreChart: MemberScoreChartRow[];
+  checkinPipelineChart: CheckinPipelineRow[];
+  heatmapRows: HeatmapRow[];
+  heatmapMaxColumns: number;
 };
 
 export function ManagerTabs({
@@ -27,6 +42,11 @@ export function ManagerTabs({
   activeQuarter,
   checkinMembers,
   teamAvgScore = null,
+  goalStatusChart,
+  memberScoreChart,
+  checkinPipelineChart,
+  heatmapRows,
+  heatmapMaxColumns,
 }: ManagerTabsProps) {
   const [active, setActive] = useState<TabId>("goals");
 
@@ -50,11 +70,29 @@ export function ManagerTabs({
         ))}
       </div>
 
-      {active === "goals" && <TeamOverview members={members} teamAvgScore={teamAvgScore} />}
+      {active === "goals" && (
+        <div className="space-y-4">
+          <div className="grid gap-4 lg:grid-cols-2">
+            <TeamGoalStatusChart data={goalStatusChart} />
+            <TeamMemberScoresChart data={memberScoreChart} activeQuarter={activeQuarter} />
+          </div>
+          <TeamOverview members={members} teamAvgScore={teamAvgScore} />
+        </div>
+      )}
 
       {active === "checkins" &&
         (activeQuarter && checkinMembers ? (
-          <TeamCheckinOverview quarter={activeQuarter} members={checkinMembers} />
+          <div className="space-y-4">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <TeamCheckinPipelineChart data={checkinPipelineChart} quarter={activeQuarter} />
+              <TeamCheckinHeatmap
+                rows={heatmapRows}
+                maxColumns={heatmapMaxColumns}
+                quarter={activeQuarter}
+              />
+            </div>
+            <TeamCheckinOverview quarter={activeQuarter} members={checkinMembers} />
+          </div>
         ) : (
           <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
             <p className="font-medium">No active check-in window</p>

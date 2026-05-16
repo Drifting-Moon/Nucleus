@@ -20,6 +20,7 @@ import { LockedGoalCard } from "@/components/goals/locked-goal-card";
 import { WeightageIndicator } from "@/components/goals/weightage-indicator";
 import { createClient } from "@/lib/supabase";
 import { hasLockedGoals } from "@/lib/goal-metrics";
+import { getErrorMessage } from "@/lib/map-supabase-error";
 import { validateGoals } from "@/lib/validate-goals";
 import { formatDateTime } from "@/lib/format-datetime";
 
@@ -173,6 +174,16 @@ export function GoalSheet({ userId, goalSettingOpen }: GoalSheetProps) {
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   const totalWeightage = goals.reduce((sum, goal) => sum + (Number(goal.weightage) || 0), 0);
   const canAddMore = goals.length < 8;
+  const canSubmit =
+    goals.length > 0 && goals.length <= 8 && totalWeightage === 100 && !loading && !saving;
+  const submitDisabledReason =
+    goals.length === 0
+      ? "Add at least one goal"
+      : goals.length > 8
+        ? "Maximum 8 goals"
+        : totalWeightage !== 100
+          ? `Total weightage must be 100% (currently ${totalWeightage}%)`
+          : undefined;
   const lockedOnSheet = hasLockedGoals(goals);
   const inRework =
     goals.some((goal) => goal.status === "rejected") && !lockedOnSheet;
@@ -199,7 +210,7 @@ export function GoalSheet({ userId, goalSettingOpen }: GoalSheetProps) {
       .eq("user_id", userId);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(getErrorMessage(error));
       return false;
     }
 
@@ -267,7 +278,7 @@ export function GoalSheet({ userId, goalSettingOpen }: GoalSheetProps) {
       }
 
       if (loadError) {
-        toast.error(loadError.message);
+        toast.error(getErrorMessage(loadError));
         setGoals([createBlankGoal()]);
         setLoading(false);
         return;
@@ -404,7 +415,7 @@ export function GoalSheet({ userId, goalSettingOpen }: GoalSheetProps) {
       setSaving(false);
 
       if (deleteError) {
-        toast.error(deleteError.message);
+        toast.error(getErrorMessage(deleteError));
         return;
       }
     }
@@ -457,7 +468,7 @@ export function GoalSheet({ userId, goalSettingOpen }: GoalSheetProps) {
           .eq("user_id", userId);
 
         if (updateError) {
-          toast.error(updateError.message);
+          toast.error(getErrorMessage(updateError));
           setSaving(false);
           return;
         }
@@ -475,7 +486,7 @@ export function GoalSheet({ userId, goalSettingOpen }: GoalSheetProps) {
           .single();
 
         if (insertError) {
-          toast.error(insertError.message);
+          toast.error(getErrorMessage(insertError));
           setSaving(false);
           return;
         }
@@ -549,7 +560,7 @@ export function GoalSheet({ userId, goalSettingOpen }: GoalSheetProps) {
       .in("status", ["draft", "rejected"]);
 
     if (submitError) {
-      toast.error(submitError.message);
+      toast.error(getErrorMessage(submitError));
       setSubmitting(false);
       return;
     }
@@ -682,8 +693,13 @@ export function GoalSheet({ userId, goalSettingOpen }: GoalSheetProps) {
               <Button type="button" variant="outline" onClick={() => saveDraft()} disabled={loading || saving || submitting}>
                 {saving ? "Saving..." : "Save Draft"}
               </Button>
-              <Button type="button" onClick={requestSubmit} disabled={loading || saving || submitting}>
-                Submit Goals
+              <Button
+                type="button"
+                onClick={requestSubmit}
+                disabled={loading || saving || submitting || !canSubmit}
+                title={submitDisabledReason}
+              >
+                {submitting ? "Submitting…" : "Submit Goals"}
               </Button>
             </div>
           </div>

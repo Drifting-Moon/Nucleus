@@ -163,6 +163,7 @@ export default async function AdminDashboard() {
 
   return (
     <DashboardShell
+      role="admin"
       title="Admin Dashboard"
       description="Governance, completion tracking, exports, and audit controls."
     >

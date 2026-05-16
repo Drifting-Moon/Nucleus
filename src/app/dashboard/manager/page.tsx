@@ -6,6 +6,12 @@ import { QuickGuide } from "@/components/quick-guide";
 import { requireRole } from "@/lib/auth";
 import { calculateWeightedOverallScore } from "@/lib/calculate-weighted-score";
 import { getActiveWindow, type QuarterWindow } from "@/lib/get-active-window";
+import {
+  buildCheckinHeatmap,
+  buildCheckinPipelineChart,
+  buildTeamGoalStatusChart,
+  buildTeamMemberScoreChart,
+} from "@/lib/manager/team-chart-data";
 import { buildTeamCheckinMembers } from "@/lib/team-checkin-status";
 import { createClient } from "@/lib/supabase-server";
 
@@ -102,29 +108,42 @@ export default async function ManagerDashboard() {
   });
 
   let checkinMembers: TeamCheckinMember[] | null = null;
+  let heatmapRows: ReturnType<typeof buildCheckinHeatmap>["rows"] = [];
+  let heatmapMaxColumns = 0;
+  let checkinPipelineChart: ReturnType<typeof buildCheckinPipelineChart> = [];
 
   if (activeWindow && teamIds.length > 0) {
     const { data: approvedGoals } = await supabase
       .from("goals")
-      .select("id, user_id")
+      .select("id, user_id, title, created_at")
       .in("user_id", teamIds)
-      .in("status", ["approved", "locked"]);
+      .in("status", ["approved", "locked"])
+      .order("created_at", { ascending: true });
 
     const approvedGoalIds = (approvedGoals ?? []).map((goal) => goal.id);
 
     const { data: checkinUpdates } = approvedGoalIds.length
       ? await supabase
           .from("quarterly_updates")
-          .select("goal_id, submitted_at, manager_feedback")
+          .select("goal_id, submitted_at, manager_feedback, score")
           .in("goal_id", approvedGoalIds)
           .eq("quarter", activeWindow.quarter_name)
       : { data: [] };
 
     checkinMembers = buildTeamCheckinMembers(team ?? [], approvedGoals ?? [], checkinUpdates ?? []);
+    checkinPipelineChart = buildCheckinPipelineChart(checkinMembers);
+
+    const heatmap = buildCheckinHeatmap(team ?? [], approvedGoals ?? [], checkinUpdates ?? []);
+    heatmapRows = heatmap.rows;
+    heatmapMaxColumns = heatmap.maxColumns;
   }
+
+  const goalStatusChart = buildTeamGoalStatusChart(members);
+  const memberScoreChart = buildTeamMemberScoreChart(members, activeQuarter);
 
   return (
     <DashboardShell
+      role="manager"
       title="Team Dashboard"
       description="Review submitted goal sheets and quarterly check-ins from your direct reports."
     >
@@ -134,6 +153,11 @@ export default async function ManagerDashboard() {
         activeQuarter={activeQuarter}
         checkinMembers={checkinMembers}
         teamAvgScore={teamAvgScore}
+        goalStatusChart={goalStatusChart}
+        memberScoreChart={memberScoreChart}
+        checkinPipelineChart={checkinPipelineChart}
+        heatmapRows={heatmapRows}
+        heatmapMaxColumns={heatmapMaxColumns}
       />
     </DashboardShell>
   );

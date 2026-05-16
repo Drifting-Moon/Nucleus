@@ -1,6 +1,8 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
+import { DashboardLoading } from "@/components/dashboard-loading";
 import { AuditLogViewer, type AuditLogEntry } from "@/components/admin/audit-log-viewer";
 import { CompletionDashboard } from "@/components/admin/completion-dashboard";
 import { ExportButton } from "@/components/admin/export-button";
@@ -14,8 +16,17 @@ import {
   type OrgEmployee,
   type OrgManager,
 } from "@/components/admin/org-hierarchy-form";
-import { AnalyticsDashboard } from "@/components/admin/analytics-dashboard";
 import { UnlockTool, type EmployeeWithLockedGoals } from "@/components/admin/unlock-tool";
+
+const AnalyticsDashboard = dynamic(
+  () =>
+    import("@/components/admin/analytics-dashboard").then((mod) => ({
+      default: mod.AnalyticsDashboard,
+    })),
+  {
+    loading: () => <DashboardLoading label="Loading analytics…" />,
+  }
+);
 import type {
   EmployeeCompletionRow,
   ManagerCompletionRow,

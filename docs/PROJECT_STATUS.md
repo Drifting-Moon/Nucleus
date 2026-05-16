@@ -37,7 +37,7 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 | **Employee** | — | Input actuals (achievement + auto score) | Done |
 | **Manager** | Approve goals | Team dashboard + review page, inline edit, approve/reject | Done |
 | **Manager** | Quarterly check-ins | Quarterly Feedback tab + per-employee review | Done |
-| **Manager** | Log feedback | Rejection note + `manager_feedback` per quarter | Partial (no full comment history UI) |
+| **Manager** | Log feedback | Rejection note + `manager_feedback` per quarter | Done — employee **Manager feedback** timeline |
 | **Manager** | — | Team dashboard | Done |
 | **Admin** | Configure cycles | Quarter Windows (goal_setting, Q1–Annual) | Done |
 | **Admin** | Org hierarchy | Assign managers (`manager_id`) | Done — **Org Hierarchy** tab |
@@ -209,6 +209,7 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 
 - `pnpm lint` — passes
 - `pnpm build` — passes
+- `pnpm test` — unit tests for `validate-goals`, `calculate-score`, `calculate-weighted-score`
 - Next.js 16 warns `middleware.ts` is deprecated (proxy convention) — non-blocking
 - Full cycle browser-tested recommended before judging
 
@@ -217,8 +218,16 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 1. Deploy to Vercel + add live URL to README.
 2. Run `demo_seed.sql` on a clean demo employee before judging.
 3. Architecture diagram (Excalidraw) for submission PDF.
-4. Optional: comment timeline, charts, email, escalation highlights.
+4. Optional: email notifications.
 5. Tighten RLS for production; drop unused `goals.is_locked` column in a future migration.
+
+## Evaluator highlights (implemented)
+
+- **Admin analytics** — Recharts dashboard (completion, scores, QoQ, manager effectiveness).
+- **Completion escalations** — employees highlighted when goal-setting ended without full submit/approve.
+- **Employee feedback timeline** — rejection notes + quarterly manager comments.
+- **Friendly API errors** — `src/lib/map-supabase-error.ts`.
+- **Role badges** — visible in dashboard header per role.
 
 ## Useful Files
 
@@ -305,7 +314,7 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 
 ## Current Limitations
 
-- **Feedback logs:** rejection reason + quarterly `manager_feedback` only; no unified comment timeline UI.
+- **Feedback logs:** timeline on employee dashboard; no threaded per-goal comment history.
 - RLS remains permissive for hackathon/demo speed.
 - `goals.is_locked` column unused by app (legacy from schema); lock = `status` in (`approved`, `locked`).
 - Push shared goal skips employees who already have locked goals for the cycle.

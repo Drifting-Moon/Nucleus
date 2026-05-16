@@ -15,6 +15,8 @@ export type EmployeeCompletionRow = {
   q2: CellStatus;
   q3: CellStatus;
   annual: CellStatus;
+  /** Goal-setting window ended but goals not fully submitted/approved */
+  needsEscalation: boolean;
 };
 
 export type ManagerCompletionRow = {
@@ -78,6 +80,12 @@ export function buildEmployeeCompletionRows(
       hasGoals &&
       memberGoals.every((goal) => goal.status === "approved" || goal.status === "locked");
 
+    const goalSettingWindow = windows.find((w) => w.quarter_name === "goal_setting");
+    const goalSettingEnded =
+      Boolean(goalSettingWindow) && todayStr > goalSettingWindow!.end_date;
+    const needsEscalation =
+      goalSettingEnded && (!hasGoals || !submitted || !approved);
+
     return {
       id: employee.id,
       name: employee.name || employee.email || "Unknown",
@@ -88,6 +96,7 @@ export function buildEmployeeCompletionRows(
       q2: quarterCellStatus("q2", windows, memberGoals, approvedGoalIds, updates, todayStr),
       q3: quarterCellStatus("q3", windows, memberGoals, approvedGoalIds, updates, todayStr),
       annual: quarterCellStatus("annual", windows, memberGoals, approvedGoalIds, updates, todayStr),
+      needsEscalation,
     };
   });
 }
