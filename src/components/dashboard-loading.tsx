@@ -21,6 +21,7 @@ export function DashboardLoading({ label = "Loading your dashboard..." }: { labe
            animationData={animationData} 
            loop={true} 
            autoplay={true}
+           initialSegment={[0, 44]}
            className="w-full h-full" 
          />
       </div>
