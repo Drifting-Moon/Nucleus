@@ -23,6 +23,8 @@ import { hasLockedGoals } from "@/lib/goal-metrics";
 import { getErrorMessage } from "@/lib/map-supabase-error";
 import { validateGoals } from "@/lib/validate-goals";
 import { formatDateTime } from "@/lib/format-datetime";
+import { Badge } from "@/components/ui/badge";
+import { DashboardLoading } from "@/components/dashboard-loading";
 
 const LOCKED_STATUSES = ["approved", "locked"] as const;
 const ACTIVE_SHEET_STATUSES = ["draft", "rejected", "submitted"] as const;
@@ -333,19 +335,8 @@ export function GoalSheet({ userId, goalSettingOpen }: GoalSheetProps) {
     };
   }, [userId, goalSettingOpen]);
 
-  if (!mounted) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>My Goals</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-            Loading goals...
-          </div>
-        </CardContent>
-      </Card>
-    );
+  if (!mounted || loading) {
+    return <DashboardLoading />;
   }
 
   const updateGoal = (index: number, updatedGoal: GoalDraft) => {
@@ -618,20 +609,16 @@ export function GoalSheet({ userId, goalSettingOpen }: GoalSheetProps) {
             </div>
           )}
 
-          {!loading && sheetSummary && (
+          {sheetSummary && (
             <div className={`rounded-lg border px-4 py-3 text-sm ${sheetSummary.className}`}>
               <p className="font-medium">{sheetSummary.title}</p>
               <p className="mt-1">{sheetSummary.description}</p>
             </div>
           )}
 
-          {loading && (
-            <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-              Loading goals...
-            </div>
-          )}
 
-          {!loading && isReadOnly ? (
+
+          {isReadOnly ? (
             <div className="space-y-3">
               {goals.map((goal) => (
                 <LockedGoalCard
@@ -650,7 +637,7 @@ export function GoalSheet({ userId, goalSettingOpen }: GoalSheetProps) {
             </div>
           ) : null}
 
-          {!loading && !isReadOnly && goals.length > 0 ? (
+          {!isReadOnly && goals.length > 0 ? (
             <div className="space-y-3">
               {goals.map((goal, index) => (
                 <GoalFormRow
@@ -664,7 +651,7 @@ export function GoalSheet({ userId, goalSettingOpen }: GoalSheetProps) {
             </div>
           ) : null}
 
-          {!loading && goals.length === 0 ? (
+          {goals.length === 0 ? (
             <div className="rounded-lg border border-dashed p-8 text-center">
               <p className="font-medium">
                 {goalSettingOpen
