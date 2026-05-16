@@ -73,6 +73,7 @@ export function GoalFormRow({
         </label>
         <Select
           value={goal.thrust_area || null}
+          disabled={goal.is_shared}
           onValueChange={(value) => updateGoal({ thrust_area: value ?? "" })}
         >
           <SelectTrigger className="w-full">
@@ -104,6 +105,7 @@ export function GoalFormRow({
         <Input
           value={goal.description}
           placeholder="Brief description"
+          disabled={goal.is_shared}
           onChange={(event) => updateGoal({ description: event.target.value })}
         />
       </div>
@@ -114,6 +116,7 @@ export function GoalFormRow({
         </label>
         <Select
           value={goal.uom || null}
+          disabled={goal.is_shared}
           onValueChange={(value) => updateGoal({ uom: value ?? "" })}
         >
           <SelectTrigger className="w-full">

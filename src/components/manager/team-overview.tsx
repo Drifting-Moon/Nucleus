@@ -1,7 +1,18 @@
+"use client";
+
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type TeamMemberStatus = "not_submitted" | "awaiting_review" | "approved" | "rejected";
 
@@ -34,8 +45,36 @@ const statusVariants: Record<TeamMemberStatus, "outline" | "secondary" | "defaul
 };
 
 export function TeamOverview({ members }: TeamOverviewProps) {
-  const awaitingReview = members.filter((member) => member.status === "awaiting_review").length;
-  const approved = members.filter((member) => member.status === "approved").length;
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [departmentFilter, setDepartmentFilter] = useState<string>("all");
+
+  const departments = useMemo(() => {
+    const set = new Set<string>();
+    for (const member of members) {
+      if (member.department) set.add(member.department);
+    }
+    return Array.from(set).sort();
+  }, [members]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return members.filter((member) => {
+      if (statusFilter !== "all" && member.status !== statusFilter) return false;
+      if (departmentFilter !== "all" && member.department !== departmentFilter) return false;
+      if (
+        q &&
+        !member.name.toLowerCase().includes(q) &&
+        !member.email.toLowerCase().includes(q)
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [members, search, statusFilter, departmentFilter]);
+
+  const awaitingReview = filtered.filter((member) => member.status === "awaiting_review").length;
+  const approved = filtered.filter((member) => member.status === "approved").length;
 
   return (
     <div className="space-y-4">
@@ -44,7 +83,7 @@ export function TeamOverview({ members }: TeamOverviewProps) {
           <CardHeader>
             <CardTitle>Total Team Members</CardTitle>
           </CardHeader>
-          <CardContent className="text-3xl font-semibold">{members.length}</CardContent>
+          <CardContent className="text-3xl font-semibold">{filtered.length}</CardContent>
         </Card>
         <Card>
           <CardHeader>
@@ -64,14 +103,51 @@ export function TeamOverview({ members }: TeamOverviewProps) {
         <CardHeader>
           <CardTitle>Team Overview</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-3">
+            <Input
+              placeholder="Search name or email…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? "all")}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="awaiting_review">Awaiting review</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="not_submitted">Not submitted</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={departmentFilter} onValueChange={(v) => setDepartmentFilter(v ?? "all")}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Department" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All departments</SelectItem>
+                {departments.map((dept) => (
+                  <SelectItem key={dept} value={dept}>
+                    {dept}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {members.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
               No employees are currently assigned to you.
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+              No team members match your filters.
             </div>
           ) : (
             <div className="space-y-3">
-              {members.map((member) => (
+              {filtered.map((member) => (
                 <div
                   key={member.id}
                   className="flex flex-col gap-3 rounded-lg border p-4 md:flex-row md:items-center md:justify-between"
@@ -84,7 +160,8 @@ export function TeamOverview({ members }: TeamOverviewProps) {
                       </Badge>
                     </div>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {member.department || "No department"} · {member.submittedCount} submitted / {member.totalGoals} total goals
+                      {member.department || "No department"} · {member.submittedCount} submitted /{" "}
+                      {member.totalGoals} total goals
                     </p>
                   </div>
                   <Button

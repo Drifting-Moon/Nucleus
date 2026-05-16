@@ -1,248 +1,243 @@
 # Nucleus Project Status
 
-Last updated: 2026-05-16T13:11+05:30
+Last updated: 2026-05-16
 
 ## Project Summary
 
 Nucleus is a role-based performance goals portal for three user types:
 
-- Employee: drafts goals, submits them, and later updates quarterly achievements.
-- Manager: reviews employee goals, approves/rejects them, and gives quarterly feedback.
-- Admin/HR: manages quarter windows, governance, exports, unlocks, and audit visibility.
+- **Employee:** One-time goal setting during the goal-setting window, then quarterly check-ins on locked goals only.
+- **Manager:** Reviews submitted goal sheets (approve/reject), then quarterly feedback when check-in windows are open.
+- **Admin/HR:** Sets quarter windows, pushes shared KPIs, tracks completion, exports data, unlocks goals with audit trail.
 
 The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 
 ## Current Stage
 
-Stage 1 foundation is complete enough for the hackathon build.
+| Stage                         | Status   | Notes                                                                 |
+| ----------------------------- | -------- | --------------------------------------------------------------------- |
+| Stage 1 — Foundation          | Complete | Auth, routing, DB, demo users                                         |
+| Stage 2 — Employee goal sheet | Complete | BRD one-time submission + window gating enforced                      |
+| Stage 3 — Manager goal review | Complete | Tabbed dashboard, back navigation, submitted-only review queue        |
+| Stage 4 — Quarterly check-ins | Complete | Windows, employee check-ins, manager feedback                         |
+| Stage 5 — Admin governance    | Complete | Completion, export, unlock, audit, push shared goal                   |
 
-Stage 2 is complete for the Employee Goal Sheet. The flow has been manually tested in browser against Supabase: add goals, save draft, refresh and reload drafts, delete saved draft rows, submit a valid 100% sheet, and render the submitted read-only view.
+## BRD Workflow (Canonical)
 
-Stage 3 is now in progress. The Manager dashboard has a team overview, status badges, summary cards, and a per-employee review route scaffold.
+### Phase 1 — Goal setting (once per cycle)
+
+1. Admin opens **goal_setting** window dates.
+2. Employee drafts up to 8 goals (100% weightage total) and submits.
+3. Manager reviews **submitted** goals only → approve (lock) or reject (rework).
+4. After approval, goals are **locked** — no further edits without Admin unlock.
+
+### Phase 2 — Quarterly check-ins (Q1, Q2, Q3, Annual)
+
+1. Employee logs **actual achievement** and status on **locked goals only** (no new goal submission).
+2. Scores auto-calculate; manager adds feedback when the check-in window is open.
+3. Admin completion dashboard reflects submission status per quarter.
 
 ## Implemented So Far
 
-### Frontend/App
+### Frontend / App
 
-- Next.js app scaffold.
-- Login page at `/login`.
-- Login role selector for Employee, Manager, and Admin.
-- Role selector prefills demo credentials:
-  - `employee@test.com`
-  - `manager@test.com`
-  - `admin@test.com`
-  - password placeholder: `password123`
-- Login now verifies the selected role against `public.users.role`.
-- If selected role and real account role do not match, the app signs out and shows an error.
-- Dashboard routes:
+- Next.js app scaffold with App Router.
+- Login at `/login` with role selector (Employee, Manager, Admin).
+- Demo credentials prefilled: `employee@test.com`, `manager@test.com`, `admin@test.com` (password `password123`).
+- Login verifies selected role against `public.users.role`.
+- Dashboard routes (server-side role guards on all):
   - `/dashboard/employee`
   - `/dashboard/manager`
+  - `/dashboard/manager/review/[employeeId]`
+  - `/dashboard/manager/checkin/[employeeId]`
   - `/dashboard/admin`
-- Each dashboard has a logout button.
-- Dashboard pages perform server-side role checks before rendering.
-- Shared `DashboardShell` client component keeps logout interactivity separate from server guards.
-- App metadata title is `Nucleus`.
-- Dashboard header includes a smooth Light/Dark/System theme toggle.
-- Each dashboard shows a role-specific Quick Guide card at the top with a 3-step workflow summary (e.g., Employee: Draft Goals → Submit → Quarterly Check-ins). Built with existing Card + lucide-react, zero new dependencies.
+  - `/api/admin/export`
+- `DashboardShell`: logout, theme toggle, optional **Back to team** link on manager detail pages.
+- Role-specific Quick Guide cards on each dashboard.
+- Sonner toasts for save/submit/approve actions.
 
-### Stage 2 Employee Goal Sheet
+### Stage 2 — Employee Goal Sheet
 
-- Status: complete and manually tested.
-- Employee dashboard renders the Goal Sheet.
-- Goal rows include:
-  - Thrust Area
-  - Goal Title
-  - Description
-  - Unit of Measurement
-  - Target
-  - Weightage
-  - Delete
-- UoM options are `number`, `percentage`, `timeline`, and `zero_based`.
-- Timeline goals use a native date input and save their deadline to `target_date`.
-- Non-timeline goals use the numeric `target` field.
-- Thrust Area options currently are Business, Customer, Operations, People, and Compliance.
-- Shared goals lock title and target while leaving weightage editable.
-- Weightage indicator shows live `X / 100%`.
-- Add Goal works and stops at 8 goals.
-- Existing goals load from Supabase for the signed-in employee.
-- Save Draft inserts new goals and updates existing goals without duplicate inserts.
-- Saved draft goals can be deleted from Supabase.
-- Submit Goals runs validation, opens a confirmation dialog, saves drafts, then sets `draft` / `rejected` goals to `submitted`.
-- Submitted, approved, and locked goals render read-only.
-- Rejected goals stay editable and show a rework notice.
-- Status summary banner shows submitted, approved, locked, and rejected states.
-- Hydration mismatch warning on the goal sheet was patched with a stable hydration-safe render.
+- Goal sheet with workflow stepper and summary cards.
+- Fields: Thrust Area, Title, Description, UoM, Target, Weightage, Delete.
+- UoM: `number`, `percentage`, `timeline`, `zero_based`.
+- Thrust areas: Business, Customer, Operations, People, Compliance.
+- Validation: UoM required, weightage ≥ 10%, total = 100% to submit, max 8 goals.
+- **Goal-setting window:** `isGoalSettingOpen()` — shows **Window closed** when outside admin dates.
+- **One-time submission:** If any goal is `approved`/`locked`, sheet is read-only; add/save/submit blocked (client + DB check).
+- **Rework:** Rejected goals editable when goal-setting open or in rework (no locked goals).
+- **Shared/forced goals** (`is_shared`): title, target, thrust area, UoM, description locked; weightage editable.
+- Submitted goals read-only until manager acts; resubmit clears `rejection_reason`.
+### Stage 3 — Manager Goal Review
 
-### Stage 3 Manager Review
+- Manager dashboard uses **tabs:** Goal Review | Quarterly Feedback (`ManagerTabs`).
+- Goal Review: team list with status badges (Not Submitted, Awaiting Review, Approved, Rejected).
+- Review page: **only `submitted` goals** shown for approve/reject (locked/rejected history hidden).
+- Manager can edit submitted targets, deadlines, weightage; approve requires 100% on submitted set only.
+- Approve → `approved` + `is_locked = true`; Reject → `rejected` + note on `users.rejection_reason`.
+- **Back to team** link on review and check-in detail pages.
 
-- Manager dashboard is now titled Team Dashboard.
-- Manager dashboard fetches employees where `public.users.manager_id` matches the signed-in manager.
-- Team Overview shows each employee with:
-  - name/email
-  - department
-  - submitted goal count
-  - total goal count
-  - status badge
-- Status badges currently include Not Submitted, Awaiting Review, Approved, and Rejected.
-- Summary cards show Total Team Members, Awaiting Review, and Approved.
-- Review route scaffold exists at `/dashboard/manager/review/[employeeId]`.
-- Review route verifies the employee belongs to the signed-in manager before showing data.
-- Review route displays the employee's goals and allows managers to edit submitted goal targets/deadlines and weightage.
-- Manager edits save back to Supabase only when every goal is at least 10% and total weightage is exactly 100%.
-- Manager can approve submitted goals after confirmation.
-- Approval saves current manager edits, sets submitted goals to `approved`, and marks `is_locked = true` for compatibility with the existing schema.
-- Manager can reject submitted goals with an optional rework reason.
-- Reject sets submitted goals to `rejected` and stores the note on `public.users.rejection_reason`.
-- Employee dashboard shows the rejection reason in the rework banner.
-- Employee resubmission clears `public.users.rejection_reason`.
+### Stage 4 — Quarterly Check-ins
 
-### Auth/Routing
+#### Admin quarter windows
 
-- Supabase browser client in `src/lib/supabase.ts`.
-- Supabase server client in `src/lib/supabase-server.ts`.
-- Middleware protects `/dashboard/*`, redirects unauthenticated users to `/login`, and routes logged-in users by role.
-- Server-side role guard lives in `src/lib/auth.ts`.
-- Environment variable validation lives in `src/lib/env.ts`.
+- Admin tab **Quarter Windows:** `goal_setting`, `q1`, `q2`, `q3`, `annual` with start/end dates.
+
+#### Employee check-ins
+
+- `CheckinGate` below goal sheet; gated until all goals approved/locked.
+- Closed window: blocked message + next window date from `getNextWindow()`.
+- Open window: achievement + status (`not_started`, `on_track`, `completed`) per locked goal.
+- **Scoring** (`calculate-score.ts`):
+  - `higher` (default): achievement ÷ target
+  - `lower`: target ÷ achievement
+  - `zero_based`: achievement 0 → 100%, else 0%
+  - `timeline`: date compare (on/before target date = 100%)
+- Score display: green ≥ 100%, yellow 50–99%, red &lt; 50%.
+- Submit writes `quarterly_updates` with `score`, `submitted_at`, `achievement_date`.
+
+#### Manager check-in review
+
+- **Quarterly Feedback** tab when a check-in window is open; blocked message when closed.
+- Per-employee: pending / submitted / feedback saved.
+- Detail page: read-only planned vs actual; one manager comment per employee per quarter (`manager_feedback`).
+
+### Stage 5 — Admin Governance
+
+- Admin dashboard tabs: **Completion** | **Quarter Windows** | **Export** | **Push Shared Goal** | **Audit Log** | **Unlock Goals**.
+- **Completion dashboard:** employee and manager rows; Q1/Q2/Q3/Annual cells (submitted / pending / N/A).
+- **Export:** CSV and Excel via `/api/admin/export` (employee, goal, targets, quarterly achievements/scores).
+- **Unlock & edit:** search employee, edit locked goal target/weightage, save & re-lock.
+- **Audit log:** viewer for `audit_logs` (unlock field changes + shared goal assignments).
+- **Push shared goal:** multi-select employees, assign forced KPI (`is_shared = true`, draft); skips employees with locked goals.
+
+### Auth / Routing
+
+- `src/lib/supabase.ts` (browser), `src/lib/supabase-server.ts` (server).
+- Middleware protects `/dashboard/*`, role-based redirects.
+- `src/lib/auth.ts` — `requireRole()` on server pages.
+- `src/lib/auth-api.ts` — admin export route guard.
 
 ### Database
 
-Migration file:
+| Migration | Purpose |
+| --------- | ------- |
+| `202605160001_stage1_foundation.sql` | Core tables, RLS, demo users |
+| `202605160002_stage4_quarterly.sql` | `achievement_date`, `score`, `submitted_at` on `quarterly_updates` |
+| `202605160003_goals_updated_at.sql` | `goals.updated_at` + trigger |
+| `202605160004_goals_score_direction.sql` | `goals.score_direction` (`higher` \| `lower`) |
 
-`supabase/migrations/202605160001_stage1_foundation.sql`
+**Tables:** `users`, `goals`, `quarterly_updates`, `quarter_windows`, `audit_logs`
 
-It defines:
+## Supabase Setup
 
-- `public.users`
-- `public.goals`, including `thrust_area`, `description`, and `target_date`
-- `public.quarterly_updates`
-- `public.audit_logs`
-- `public.quarter_windows`
-- `public.handle_new_user()` trigger function
-- `on_auth_user_created` trigger
-- RLS enabled on all main tables
-- Basic permissive authenticated policies for hackathon speed, including goal delete for draft cleanup
-- Demo role/profile updates for employee, manager, and admin accounts
-- Employee-to-manager link for `employee@test.com`
-- `public.users.rejection_reason` for future Manager rejection notes
+### Fresh setup (run in order)
 
-## Supabase Setup Notes
+1. `supabase/migrations/202605160001_stage1_foundation.sql`
+2. `supabase/migrations/202605160002_stage4_quarterly.sql`
+3. `supabase/migrations/202605160003_goals_updated_at.sql`
+4. `supabase/migrations/202605160004_goals_score_direction.sql`
+5. Create Auth users: `employee@test.com`, `manager@test.com`, `admin@test.com`
+6. Confirm `public.users` roles and employee `manager_id` → manager
+7. `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-If setting up from scratch, do this in Supabase:
+### Demo / test tips
 
-1. Open Supabase SQL Editor.
-2. Run the contents of:
-
-   `supabase/migrations/202605160001_stage1_foundation.sql`
-
-3. Confirm the three demo users exist in Supabase Auth:
-
-   - `employee@test.com`
-   - `manager@test.com`
-   - `admin@test.com`
-
-4. Confirm `public.users` has matching rows for those users.
-5. Confirm roles are set correctly:
-
-   - employee user role: `employee`
-   - manager user role: `manager`
-   - admin user role: `admin`
-
-6. Confirm the employee row has `manager_id` set to the manager user's id.
-7. Keep these env vars in `.env.local`:
-
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-
-Important: do not run old SQL snippets that update `manager_id` without a `WHERE` clause. That would assign the manager to every user.
-
-If the Stage 1 migration was already run before Thrust Area was added, run this in Supabase SQL Editor:
-
-```sql
-alter table public.goals add column if not exists thrust_area text;
-```
-
-If the Stage 1 migration was already run before Description and Timeline date support were added, run this in Supabase SQL Editor:
-
-```sql
-alter table public.goals add column if not exists description text;
-alter table public.goals add column if not exists target_date date;
-```
-
-If the Stage 1 migration was already run before Manager rejection-note support was added, run this in Supabase SQL Editor:
-
-```sql
-alter table public.users add column if not exists rejection_reason text;
-
-drop policy if exists "Managers can update direct report rejection reasons" on public.users;
-
-create policy "Managers can update direct report rejection reasons"
-  on public.users
-  for update
-  to authenticated
-  using (manager_id = auth.uid())
-  with check (manager_id = auth.uid());
-```
-
-If the Stage 1 migration was already run before saved-goal delete was added, run this in Supabase SQL Editor:
-
-```sql
-drop policy if exists "Authenticated users can delete goals" on public.goals;
-
-create policy "Authenticated users can delete goals"
-  on public.goals
-  for delete
-  to authenticated
-  using (true);
-```
+- Set **goal_setting** and check-in quarter dates in Admin → Quarter Windows so **today** falls inside the window you want to test.
+- Optional: `supabase/seed/demo_seed.sql` (skips if employee already has goals).
+- Clear test goals via Supabase SQL or Admin unlock if needed before a clean demo run.
 
 ## Verification Status
 
-Latest local verification:
+- `pnpm lint` — passes
+- `pnpm build` — passes
+- Next.js 16 warns `middleware.ts` is deprecated (proxy convention) — non-blocking
+- End-to-end browser test recommended after DB migrations
 
-- `pnpm lint` passes.
-- `pnpm build` passes.
+## Next Up
 
-Known build note:
-
-- Next.js 16 warns that the `middleware.ts` file convention is deprecated in favor of the newer proxy convention. It is only a warning right now and does not block the app.
-
-## Stage 3 Starting Point
-
-Continue the Manager review and approval workflow.
-
-Remaining Stage 3 order:
-
-1. Manually test manager approve/reject from the browser.
-2. Add any needed polish to Manager Review after testing.
-3. Decide whether to keep or retire the legacy `is_locked` boolean after hackathon flow stabilizes.
+1. Browser-test full cycle: goal setting → submit → manager approve → check-in → manager feedback → admin export.
+2. Tighten RLS policies for production.
+3. Align thrust-area labels with Atomberg final list if needed.
+4. Optional: check-in history view for past quarters (read-only).
 
 ## Useful Files
 
-- Login page: `src/app/login/page.tsx`
-- Employee dashboard: `src/app/dashboard/employee/page.tsx`
-- Manager dashboard: `src/app/dashboard/manager/page.tsx`
-- Manager review route: `src/app/dashboard/manager/review/[employeeId]/page.tsx`
-- Admin dashboard: `src/app/dashboard/admin/page.tsx`
-- Dashboard shell: `src/components/dashboard-shell.tsx`
-- Theme toggle: `src/components/theme-toggle.tsx`
-- Goal sheet: `src/components/goals/goal-sheet.tsx`
-- Goal row: `src/components/goals/goal-form-row.tsx`
-- Weightage indicator: `src/components/goals/weightage-indicator.tsx`
-- Quick guide: `src/components/quick-guide.tsx`
-- Goal validation: `src/lib/validate-goals.ts`
-- Team overview: `src/components/manager/team-overview.tsx`
-- Employee goal review: `src/components/manager/employee-goal-review.tsx`
-- Server auth guard: `src/lib/auth.ts`
-- Browser Supabase client: `src/lib/supabase.ts`
-- Server Supabase client: `src/lib/supabase-server.ts`
-- Env validation: `src/lib/env.ts`
-- Middleware: `src/middleware.ts`
-- Database migration: `supabase/migrations/202605160001_stage1_foundation.sql`
+**App routes**
+
+- `src/app/login/page.tsx`
+- `src/app/dashboard/employee/page.tsx`
+- `src/app/dashboard/manager/page.tsx`
+- `src/app/dashboard/manager/review/[employeeId]/page.tsx`
+- `src/app/dashboard/manager/checkin/[employeeId]/page.tsx`
+- `src/app/dashboard/admin/page.tsx`
+- `src/app/api/admin/export/route.ts`
+
+**Goals**
+
+- `src/components/goals/goal-sheet.tsx`
+- `src/components/goals/goal-form-row.tsx`
+- `src/components/goals/weightage-indicator.tsx`
+- `src/components/employee/workflow-stepper.tsx`
+- `src/components/employee/goal-summary-cards.tsx`
+- `src/lib/validate-goals.ts`
+- `src/lib/goal-metrics.ts`
+- `src/lib/employee-workflow.ts`
+
+**Check-ins**
+
+- `src/components/checkins/checkin-gate.tsx`
+- `src/components/checkins/checkin-form.tsx`
+- `src/components/checkins/checkin-row.tsx`
+- `src/components/checkins/score-display.tsx`
+- `src/lib/calculate-score.ts`
+- `src/lib/get-active-window.ts`
+- `src/lib/validate-checkin.ts`
+- `src/lib/quarter-labels.ts`
+
+**Manager**
+
+- `src/components/manager/manager-tabs.tsx`
+- `src/components/manager/team-overview.tsx`
+- `src/components/manager/employee-goal-review.tsx`
+- `src/components/manager/team-checkin-overview.tsx`
+- `src/components/manager/employee-checkin-review.tsx`
+- `src/lib/team-checkin-status.ts`
+
+**Admin**
+
+- `src/components/admin/admin-tabs.tsx`
+- `src/components/admin/completion-dashboard.tsx`
+- `src/components/admin/quarter-window-form.tsx`
+- `src/components/admin/export-button.tsx`
+- `src/components/admin/push-shared-goal-form.tsx`
+- `src/components/admin/unlock-tool.tsx`
+- `src/components/admin/unlock-dialog.tsx`
+- `src/components/admin/audit-log-viewer.tsx`
+- `src/lib/admin/completion-data.ts`
+- `src/lib/build-export-data.ts`
+- `src/lib/write-audit-log.ts`
+
+**Shared**
+
+- `src/components/dashboard-shell.tsx`
+- `src/components/quick-guide.tsx`
+- `src/components/theme-toggle.tsx`
+- `src/components/app-toaster.tsx`
+- `src/lib/auth.ts`
+- `src/middleware.ts`
+
+**Migrations**
+
+- `supabase/migrations/202605160001_stage1_foundation.sql`
+- `supabase/migrations/202605160002_stage4_quarterly.sql`
+- `supabase/migrations/202605160003_goals_updated_at.sql`
+- `supabase/migrations/202605160004_goals_score_direction.sql`
 
 ## Current Limitations
 
-- Manager and Admin dashboards are still placeholders.
-- Manager review/approval is not implemented yet.
-- Admin quarter management UI is not implemented yet.
-- RLS policies are intentionally permissive for hackathon progress and should be tightened after core flows work.
-- Final Thrust Area labels can still be adjusted if Atomberg provides an exact list.
+- RLS remains permissive for hackathon/demo speed — tighten before production.
+- `is_locked` boolean and `status = 'locked'` both used; consider consolidating later.
+- Check-in history (view/edit past quarters) not implemented.
+- Push shared goal requires `score_direction` migration; employees with locked goals are skipped.
+- Manager/employee flows should be re-verified in browser after each schema change.

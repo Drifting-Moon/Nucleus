@@ -1,7 +1,11 @@
 import { DashboardShell } from "@/components/dashboard-shell";
-import { TeamMemberSummary, TeamOverview } from "@/components/manager/team-overview";
+import { ManagerTabs } from "@/components/manager/manager-tabs";
+import type { TeamCheckinMember } from "@/components/manager/team-checkin-overview";
+import type { TeamMemberSummary } from "@/components/manager/team-overview";
 import { QuickGuide } from "@/components/quick-guide";
 import { requireRole } from "@/lib/auth";
+import { getActiveWindow, type QuarterWindow } from "@/lib/get-active-window";
+import { buildTeamCheckinMembers } from "@/lib/team-checkin-status";
 import { createClient } from "@/lib/supabase-server";
 
 const managerSteps = [
@@ -21,11 +25,9 @@ export default async function ManagerDashboard() {
     .order("name", { ascending: true });
 
   const teamIds = team?.map((member) => member.id) ?? [];
+
   const { data: goals } = teamIds.length
-    ? await supabase
-        .from("goals")
-        .select("user_id, status")
-        .in("user_id", teamIds)
+    ? await supabase.from("goals").select("id, user_id, status").in("user_id", teamIds)
     : { data: [] };
 
   const members: TeamMemberSummary[] = (team ?? []).map((member) => {
@@ -54,13 +56,46 @@ export default async function ManagerDashboard() {
     };
   });
 
+  const { data: windows } = await supabase
+    .from("quarter_windows")
+    .select("quarter_name, start_date, end_date");
+
+  const activeWindow = getActiveWindow((windows ?? []) as QuarterWindow[]);
+
+  let checkinMembers: TeamCheckinMember[] | null = null;
+  const activeQuarter = activeWindow?.quarter_name ?? null;
+
+  if (activeWindow && teamIds.length > 0) {
+    const { data: approvedGoals } = await supabase
+      .from("goals")
+      .select("id, user_id")
+      .in("user_id", teamIds)
+      .in("status", ["approved", "locked"]);
+
+    const approvedGoalIds = (approvedGoals ?? []).map((goal) => goal.id);
+
+    const { data: checkinUpdates } = approvedGoalIds.length
+      ? await supabase
+          .from("quarterly_updates")
+          .select("goal_id, submitted_at, manager_feedback")
+          .in("goal_id", approvedGoalIds)
+          .eq("quarter", activeWindow.quarter_name)
+      : { data: [] };
+
+    checkinMembers = buildTeamCheckinMembers(team ?? [], approvedGoals ?? [], checkinUpdates ?? []);
+  }
+
   return (
     <DashboardShell
       title="Team Dashboard"
-      description="Review submitted goal sheets from your direct reports."
+      description="Review submitted goal sheets and quarterly check-ins from your direct reports."
     >
       <QuickGuide role="Manager" steps={managerSteps} />
-      <TeamOverview members={members} />
+      <ManagerTabs
+        members={members}
+        activeQuarter={activeQuarter}
+        checkinMembers={checkinMembers}
+      />
     </DashboardShell>
   );
 }

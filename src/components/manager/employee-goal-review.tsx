@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { WeightageIndicator } from "@/components/goals/weightage-indicator";
 import { createClient } from "@/lib/supabase";
+import { toast } from "sonner";
 
 export type ReviewGoal = {
   id: string;
@@ -37,6 +38,8 @@ type EmployeeGoalReviewProps = {
     department: string | null;
   };
   goals: ReviewGoal[];
+  /** Locked / rejected / draft goals not shown in the review queue */
+  otherGoalsCount?: number;
 };
 
 function formatTarget(goal: ReviewGoal) {
@@ -47,7 +50,11 @@ function formatTarget(goal: ReviewGoal) {
   return goal.target ?? "Not set";
 }
 
-export function EmployeeGoalReview({ employee, goals }: EmployeeGoalReviewProps) {
+export function EmployeeGoalReview({
+  employee,
+  goals,
+  otherGoalsCount = 0,
+}: EmployeeGoalReviewProps) {
   const [reviewGoals, setReviewGoals] = useState(goals);
   const [saving, setSaving] = useState(false);
   const [approving, setApproving] = useState(false);
@@ -55,11 +62,11 @@ export function EmployeeGoalReview({ employee, goals }: EmployeeGoalReviewProps)
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  const totalWeightage = reviewGoals.reduce((sum, goal) => sum + (goal.weightage ?? 0), 0);
-  const hasSubmittedGoals = reviewGoals.some((goal) => goal.status === "submitted");
+  const submittedGoals = reviewGoals.filter((goal) => goal.status === "submitted");
+  const totalWeightage = submittedGoals.reduce((sum, goal) => sum + (goal.weightage ?? 0), 0);
+  const hasSubmittedGoals = submittedGoals.length > 0;
   const canEdit = hasSubmittedGoals;
+  const canApprove = hasSubmittedGoals && totalWeightage === 100;
 
   const updateGoal = (goalId: string, updates: Partial<ReviewGoal>) => {
     setReviewGoals((currentGoals) =>
@@ -67,18 +74,17 @@ export function EmployeeGoalReview({ employee, goals }: EmployeeGoalReviewProps)
         goal.id === goalId ? { ...goal, ...updates } : goal
       )
     );
-    setMessage("");
   };
 
   const validateManagerEdits = () => {
-    for (const goal of reviewGoals) {
+    for (const goal of submittedGoals) {
       if ((goal.weightage ?? 0) < 10) {
         return `"${goal.title || "Untitled goal"}" must be at least 10% weightage`;
       }
     }
 
-    if (totalWeightage !== 100) {
-      return `Total weightage is ${totalWeightage}%. Must equal exactly 100%`;
+    if (hasSubmittedGoals && totalWeightage !== 100) {
+      return `Submitted goals total ${totalWeightage}%. Must equal exactly 100% (locked goals are not counted).`;
     }
 
     return null;
@@ -88,14 +94,11 @@ export function EmployeeGoalReview({ employee, goals }: EmployeeGoalReviewProps)
     const validationError = validateManagerEdits();
 
     if (validationError) {
-      setError(validationError);
-      setMessage("");
+      toast.error(validationError);
       return;
     }
 
     setSaving(true);
-    setError("");
-    setMessage("");
 
     const supabase = createClient();
 
@@ -115,7 +118,7 @@ export function EmployeeGoalReview({ employee, goals }: EmployeeGoalReviewProps)
         .eq("status", "submitted");
 
       if (updateError) {
-        setError(updateError.message);
+        toast.error(updateError.message);
         setSaving(false);
         return;
       }
@@ -123,7 +126,7 @@ export function EmployeeGoalReview({ employee, goals }: EmployeeGoalReviewProps)
 
     setSaving(false);
     if (showSuccessMessage) {
-      setMessage("Manager edits saved.");
+      toast.success("Manager edits saved.");
     }
 
     return true;
@@ -133,32 +136,24 @@ export function EmployeeGoalReview({ employee, goals }: EmployeeGoalReviewProps)
     const validationError = validateManagerEdits();
 
     if (validationError) {
-      setError(validationError);
-      setMessage("");
+      toast.error(validationError);
       return;
     }
 
-    setError("");
-    setMessage("");
     setApproveDialogOpen(true);
   };
 
   const requestReject = () => {
     if (!hasSubmittedGoals) {
-      setError("No submitted goals are available to return for rework.");
-      setMessage("");
+      toast.error("No submitted goals are available to return for rework.");
       return;
     }
 
-    setError("");
-    setMessage("");
     setRejectDialogOpen(true);
   };
 
   const approveGoals = async () => {
     setApproving(true);
-    setError("");
-    setMessage("");
 
     const editsSaved = await saveManagerEdits(false);
 
@@ -172,7 +167,7 @@ export function EmployeeGoalReview({ employee, goals }: EmployeeGoalReviewProps)
       .map((goal) => goal.id);
 
     if (submittedGoalIds.length === 0) {
-      setError("No submitted goals are available to approve.");
+      toast.error("No submitted goals are available to approve.");
       setApproving(false);
       return;
     }
@@ -185,7 +180,7 @@ export function EmployeeGoalReview({ employee, goals }: EmployeeGoalReviewProps)
       .eq("status", "submitted");
 
     if (approveError) {
-      setError(approveError.message);
+      toast.error(approveError.message);
       setApproving(false);
       return;
     }
@@ -199,20 +194,18 @@ export function EmployeeGoalReview({ employee, goals }: EmployeeGoalReviewProps)
     );
     setApproveDialogOpen(false);
     setApproving(false);
-    setMessage("Goals approved and locked.");
+    toast.success("Goals approved and locked.");
   };
 
   const rejectGoals = async () => {
     setRejecting(true);
-    setError("");
-    setMessage("");
 
     const submittedGoalIds = reviewGoals
       .filter((goal) => goal.status === "submitted")
       .map((goal) => goal.id);
 
     if (submittedGoalIds.length === 0) {
-      setError("No submitted goals are available to return for rework.");
+      toast.error("No submitted goals are available to return for rework.");
       setRejecting(false);
       return;
     }
@@ -224,7 +217,7 @@ export function EmployeeGoalReview({ employee, goals }: EmployeeGoalReviewProps)
       .eq("id", employee.id);
 
     if (reasonError) {
-      setError(reasonError.message);
+      toast.error(reasonError.message);
       setRejecting(false);
       return;
     }
@@ -236,7 +229,7 @@ export function EmployeeGoalReview({ employee, goals }: EmployeeGoalReviewProps)
       .eq("status", "submitted");
 
     if (rejectError) {
-      setError(rejectError.message);
+      toast.error(rejectError.message);
       setRejecting(false);
       return;
     }
@@ -250,7 +243,7 @@ export function EmployeeGoalReview({ employee, goals }: EmployeeGoalReviewProps)
     );
     setRejectDialogOpen(false);
     setRejecting(false);
-    setMessage("Goals returned for rework.");
+    toast.success("Goals returned for rework.");
   };
 
   return (
@@ -260,34 +253,38 @@ export function EmployeeGoalReview({ employee, goals }: EmployeeGoalReviewProps)
         <CardHeader>
           <CardTitle>{employee.name || employee.email || "Employee"}</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <p className="text-sm text-muted-foreground">
-            {employee.department || "No department"} · {employee.email}
-          </p>
-          {reviewGoals.length > 0 && <WeightageIndicator total={totalWeightage} />}
+        <CardContent className="space-y-2">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <p className="text-sm text-muted-foreground">
+              {employee.department || "No department"} · {employee.email}
+            </p>
+            {hasSubmittedGoals && <WeightageIndicator total={totalWeightage} />}
+          </div>
+          {reviewGoals.some((g) => g.status === "locked" || g.status === "approved") &&
+          hasSubmittedGoals ? (
+            <p className="text-xs text-muted-foreground">
+              Weightage total applies to submitted goals only. Locked goals are excluded from the
+              100% check.
+            </p>
+          ) : null}
         </CardContent>
       </Card>
 
       {!hasSubmittedGoals && (
         <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-          No submitted goals are waiting for review.
-        </div>
-      )}
-
-      {error && (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
-
-      {message && (
-        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700">
-          {message}
+          <p>No submitted goals are waiting for review.</p>
+          {otherGoalsCount > 0 ? (
+            <p className="mt-2">
+              This employee has {otherGoalsCount} other goal
+              {otherGoalsCount === 1 ? "" : "s"} on file (locked or previously returned). Only
+              submitted goals appear here.
+            </p>
+          ) : null}
         </div>
       )}
 
       <div className="space-y-3">
-        {reviewGoals.map((goal) => (
+        {submittedGoals.map((goal) => (
           <Card key={goal.id}>
             <CardContent className="space-y-3 pt-4">
               <div className="flex flex-wrap items-center gap-2">
@@ -352,7 +349,16 @@ export function EmployeeGoalReview({ employee, goals }: EmployeeGoalReviewProps)
           <Button type="button" variant="outline" onClick={requestReject} disabled={saving || approving || rejecting}>
             Reject Goals
           </Button>
-          <Button type="button" onClick={requestApprove} disabled={saving || approving || rejecting}>
+          <Button
+            type="button"
+            onClick={requestApprove}
+            disabled={saving || approving || rejecting || !canApprove}
+            title={
+              !canApprove
+                ? `Submitted goals must total 100% (currently ${totalWeightage}%)`
+                : undefined
+            }
+          >
             Approve Goals
           </Button>
         </div>

@@ -30,14 +30,21 @@ export default async function ManagerEmployeeReviewPage({
     .eq("user_id", employeeId)
     .order("created_at", { ascending: true });
 
+  const allGoals = (goals ?? []) as ReviewGoal[];
+  const submittedGoals = allGoals.filter((goal) => goal.status === "submitted");
+  const otherGoalsCount = allGoals.length - submittedGoals.length;
+
   return (
     <DashboardShell
       title="Employee Goal Review"
       description="Review submitted goals before approving or returning them for rework."
+      backHref="/dashboard/manager"
+      backLabel="Back to team"
     >
       <EmployeeGoalReview
         employee={employee}
-        goals={(goals ?? []) as ReviewGoal[]}
+        goals={submittedGoals}
+        otherGoalsCount={otherGoalsCount}
       />
     </DashboardShell>
   );

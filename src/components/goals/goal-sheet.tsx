@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Lock, Plus } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -16,8 +18,13 @@ import { Separator } from "@/components/ui/separator";
 import { GoalDraft, GoalFormRow } from "@/components/goals/goal-form-row";
 import { WeightageIndicator } from "@/components/goals/weightage-indicator";
 import { createClient } from "@/lib/supabase";
+import { hasLockedGoals } from "@/lib/goal-metrics";
 import { validateGoals } from "@/lib/validate-goals";
+import { formatDateTime } from "@/lib/format-datetime";
 import { Badge } from "@/components/ui/badge";
+
+const LOCKED_STATUSES = ["approved", "locked"] as const;
+const ACTIVE_SHEET_STATUSES = ["draft", "rejected", "submitted"] as const;
 
 type GoalRecord = {
   id: string;
@@ -30,6 +37,7 @@ type GoalRecord = {
   target_date: string | null;
   is_shared: boolean | null;
   status: string | null;
+  created_at: string | null;
 };
 
 type UserProfileRecord = {
@@ -70,7 +78,37 @@ function getStatusLabel(status: string) {
   return status;
 }
 
-function getGoalSheetSummary(goals: GoalDraft[], rejectionReason: string) {
+function getGoalSheetSummary(
+  goals: GoalDraft[],
+  rejectionReason: string,
+  options: { hasLocked: boolean; goalSettingOpen: boolean }
+) {
+  if (options.hasLocked) {
+    return {
+      className: "border-foreground/20 bg-muted text-foreground",
+      title: "Goals locked for this cycle",
+      description:
+        "Your approved goals cannot be changed. Use Quarterly Check-ins below to log actual achievement and update progress status.",
+    };
+  }
+
+  if (!options.goalSettingOpen && goals.length === 0) {
+    return {
+      className: "border-amber-500/30 bg-amber-500/10 text-amber-800",
+      title: "Window closed",
+      description:
+        "The goal-setting window is not open. Contact your administrator if you need help.",
+    };
+  }
+
+  if (!options.goalSettingOpen && goals.length > 0) {
+    return {
+      className: "border-amber-500/30 bg-amber-500/10 text-amber-800",
+      title: "Window closed",
+      description: "You can no longer edit or submit goals outside the goal-setting window.",
+    };
+  }
+
   if (goals.some((goal) => goal.status === "rejected")) {
     return {
       className: "border-amber-500/30 bg-amber-500/10 text-amber-800",
@@ -110,13 +148,15 @@ function getGoalSheetSummary(goals: GoalDraft[], rejectionReason: string) {
 
 type GoalSheetProps = {
   userId: string;
+  goalSettingOpen: boolean;
 };
 
 const subscribeToHydration = () => () => {};
 const getClientSnapshot = () => true;
 const getServerSnapshot = () => false;
 
-export function GoalSheet({ userId }: GoalSheetProps) {
+export function GoalSheet({ userId, goalSettingOpen }: GoalSheetProps) {
+  const router = useRouter();
   const mounted = useSyncExternalStore(
     subscribeToHydration,
     getClientSnapshot,
@@ -127,27 +167,92 @@ export function GoalSheet({ userId }: GoalSheetProps) {
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   const totalWeightage = goals.reduce((sum, goal) => sum + (Number(goal.weightage) || 0), 0);
   const canAddMore = goals.length < 8;
+  const lockedOnSheet = hasLockedGoals(goals);
+  const inRework =
+    goals.some((goal) => goal.status === "rejected") && !lockedOnSheet;
+  const canEditGoals = !lockedOnSheet && (goalSettingOpen || inRework);
   const isReadOnly =
+    !canEditGoals ||
+    (goals.length > 0 &&
+      goals.every((goal) =>
+        ["submitted", "approved", "locked"].includes(goal.status)
+      ));
+  const isApprovedLocked =
     goals.length > 0 &&
-    goals.every((goal) => ["submitted", "approved", "locked"].includes(goal.status));
-  const sheetSummary = getGoalSheetSummary(goals, rejectionReason);
+    goals.every((goal) => LOCKED_STATUSES.includes(goal.status as (typeof LOCKED_STATUSES)[number]));
+  const sheetSummary = getGoalSheetSummary(goals, rejectionReason, {
+    hasLocked: lockedOnSheet,
+    goalSettingOpen,
+  });
+
+  const assertCanModifyGoals = async () => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("goals")
+      .select("status")
+      .eq("user_id", userId);
+
+    if (error) {
+      toast.error(error.message);
+      return false;
+    }
+
+    const rows = data ?? [];
+
+    if (hasLockedGoals(rows)) {
+      toast.error(
+        "Goals are locked for this cycle. Use quarterly check-ins to update progress."
+      );
+      return false;
+    }
+
+    const rework = rows.some((goal) => goal.status === "rejected");
+    if (!goalSettingOpen && !rework) {
+      toast.error("Goal setting window is closed.");
+      return false;
+    }
+
+    return true;
+  };
+
+  const blockGoalSettingEdits = (action: "add" | "save" | "submit") => {
+    if (lockedOnSheet) {
+      toast.error(
+        "Goals are locked for this cycle. Use quarterly check-ins to update progress."
+      );
+      return true;
+    }
+
+    if (!goalSettingOpen && !inRework) {
+      toast.error(
+        action === "add"
+          ? "Goal setting window is closed. You cannot add new goals."
+          : "Goal setting window is closed."
+      );
+      return true;
+    }
+
+    return false;
+  };
 
   useEffect(() => {
     let ignore = false;
 
     async function loadGoals() {
       setLoading(true);
-      setError("");
       const supabase = createClient();
 
       const { data, error: loadError } = await supabase
         .from("goals")
-        .select("id, thrust_area, title, description, weightage, uom, target, target_date, is_shared, status")
+        .select(
+          "id, thrust_area, title, description, weightage, uom, target, target_date, is_shared, status, created_at"
+        )
         .eq("user_id", userId)
         .order("created_at", { ascending: true });
 
@@ -162,11 +267,18 @@ export function GoalSheet({ userId }: GoalSheetProps) {
       }
 
       if (loadError) {
-        setError(loadError.message);
+        toast.error(loadError.message);
         setGoals([createBlankGoal()]);
         setLoading(false);
         return;
       }
+
+      const latestUpdate = (data ?? [])
+        .map((goal) => goal.created_at)
+        .filter(Boolean)
+        .sort()
+        .at(-1);
+      setLastUpdatedAt(latestUpdate ?? null);
 
       const loadedGoals: GoalDraft[] | undefined = (data as GoalRecord[] | null)?.map((goal) => ({
         id: goal.id,
@@ -181,7 +293,24 @@ export function GoalSheet({ userId }: GoalSheetProps) {
         status: goal.status ?? "draft",
       }));
 
-      setGoals(loadedGoals?.length ? loadedGoals : [createBlankGoal()]);
+      const allLoaded = loadedGoals ?? [];
+      const locked = allLoaded.filter((goal) =>
+        LOCKED_STATUSES.includes(goal.status as (typeof LOCKED_STATUSES)[number])
+      );
+      const active = allLoaded.filter((goal) =>
+        ACTIVE_SHEET_STATUSES.includes(goal.status as (typeof ACTIVE_SHEET_STATUSES)[number])
+      );
+
+      if (locked.length > 0) {
+        setGoals(locked);
+      } else if (active.length > 0) {
+        setGoals(active);
+      } else if (goalSettingOpen) {
+        setGoals([createBlankGoal()]);
+      } else {
+        setGoals([]);
+      }
+
       setRejectionReason((profile as UserProfileRecord | null)?.rejection_reason ?? "");
       setLoading(false);
     }
@@ -191,7 +320,7 @@ export function GoalSheet({ userId }: GoalSheetProps) {
     return () => {
       ignore = true;
     };
-  }, [userId]);
+  }, [userId, goalSettingOpen]);
 
   if (!mounted) {
     return (
@@ -217,12 +346,15 @@ export function GoalSheet({ userId }: GoalSheetProps) {
   };
 
   const addGoal = () => {
+    if (blockGoalSettingEdits("add")) {
+      return;
+    }
+
     if (!canAddMore) {
       return;
     }
 
     setGoals((currentGoals) => [...currentGoals, createBlankGoal()]);
-    setMessage("");
   };
 
   const validateDraftSave = () => {
@@ -251,13 +383,16 @@ export function GoalSheet({ userId }: GoalSheetProps) {
     return null;
   };
 
+  const requestDeleteGoal = (index: number) => {
+    setPendingDeleteIndex(index);
+    setConfirmDeleteOpen(true);
+  };
+
   const deleteGoal = async (index: number) => {
     const goal = goals[index];
 
     if (goal?.id) {
       setSaving(true);
-      setError("");
-      setMessage("");
 
       const supabase = createClient();
       const { error: deleteError } = await supabase
@@ -269,7 +404,7 @@ export function GoalSheet({ userId }: GoalSheetProps) {
       setSaving(false);
 
       if (deleteError) {
-        setError(deleteError.message);
+        toast.error(deleteError.message);
         return;
       }
     }
@@ -277,21 +412,27 @@ export function GoalSheet({ userId }: GoalSheetProps) {
     setGoals((currentGoals) =>
       currentGoals.filter((_, goalIndex) => goalIndex !== index)
     );
-    setMessage("");
+    toast.success("Goal deleted");
+    router.refresh();
   };
 
   const saveDraft = async (showSuccessMessage = true) => {
+    if (blockGoalSettingEdits("save")) {
+      return;
+    }
+
+    if (!(await assertCanModifyGoals())) {
+      return;
+    }
+
     const validationError = validateDraftSave();
 
     if (validationError) {
-      setError(validationError);
-      setMessage("");
+      toast.error(validationError);
       return;
     }
 
     setSaving(true);
-    setError("");
-    setMessage("");
 
     const supabase = createClient();
     const savedGoals: GoalDraft[] = [];
@@ -316,7 +457,7 @@ export function GoalSheet({ userId }: GoalSheetProps) {
           .eq("user_id", userId);
 
         if (updateError) {
-          setError(updateError.message);
+          toast.error(updateError.message);
           setSaving(false);
           return;
         }
@@ -334,7 +475,7 @@ export function GoalSheet({ userId }: GoalSheetProps) {
           .single();
 
         if (insertError) {
-          setError(insertError.message);
+          toast.error(insertError.message);
           setSaving(false);
           return;
         }
@@ -359,30 +500,39 @@ export function GoalSheet({ userId }: GoalSheetProps) {
     setGoals(savedGoals);
     setSaving(false);
     if (showSuccessMessage) {
-      setMessage("Draft saved.");
+      toast.success("Goals saved successfully");
     }
 
+    setLastUpdatedAt(new Date().toISOString());
+    router.refresh();
     return savedGoals;
   };
 
   const requestSubmit = () => {
-    const validationError = validateGoals(goals);
-
-    if (validationError) {
-      setError(validationError);
-      setMessage("");
+    if (blockGoalSettingEdits("submit")) {
       return;
     }
 
-    setError("");
-    setMessage("");
+    const validationError = validateGoals(goals);
+
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+
     setConfirmSubmitOpen(true);
   };
 
   const submitGoals = async () => {
+    if (blockGoalSettingEdits("submit")) {
+      return;
+    }
+
+    if (!(await assertCanModifyGoals())) {
+      return;
+    }
+
     setSubmitting(true);
-    setError("");
-    setMessage("");
 
     const savedGoals = await saveDraft(false);
 
@@ -399,7 +549,7 @@ export function GoalSheet({ userId }: GoalSheetProps) {
       .in("status", ["draft", "rejected"]);
 
     if (submitError) {
-      setError(submitError.message);
+      toast.error(submitError.message);
       setSubmitting(false);
       return;
     }
@@ -419,35 +569,9 @@ export function GoalSheet({ userId }: GoalSheetProps) {
     setConfirmSubmitOpen(false);
     setRejectionReason("");
     setSubmitting(false);
-    setMessage("Goals submitted. Waiting for manager review.");
-  };
-
-  const resetData = async () => {
-    setSaving(true);
-    setError("");
-    setMessage("");
-
-    const supabase = createClient();
-    const { error: deleteError } = await supabase
-      .from("goals")
-      .delete()
-      .eq("user_id", userId);
-
-    await supabase
-      .from("users")
-      .update({ rejection_reason: null })
-      .eq("id", userId);
-
-    setSaving(false);
-
-    if (deleteError) {
-      setError(deleteError.message);
-      return;
-    }
-
-    setGoals([createBlankGoal()]);
-    setRejectionReason("");
-    setMessage("Test data reset successfully.");
+    setLastUpdatedAt(new Date().toISOString());
+    toast.success("Goals submitted. Waiting for manager review.");
+    router.refresh();
   };
 
   return (
@@ -458,34 +582,28 @@ export function GoalSheet({ userId }: GoalSheetProps) {
             <div>
               <CardTitle>My Goals</CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
-                Draft your goals and balance the total weightage before submitting.
+                {lockedOnSheet
+                  ? "Your goals are locked. Update progress in quarterly check-ins below."
+                  : goalSettingOpen || inRework
+                    ? "Draft your goals and balance the total weightage before submitting."
+                    : "Goal setting is closed. Approved goals are shown below when available."}
               </p>
+              {lastUpdatedAt ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Last updated: {formatDateTime(lastUpdatedAt)}
+                </p>
+              ) : null}
             </div>
-            <div className="flex flex-col items-end gap-2">
-              {!isReadOnly && <WeightageIndicator total={totalWeightage} />}
-              <Button 
-                variant="destructive" 
-                size="sm" 
-                onClick={resetData} 
-                disabled={loading || saving || submitting}
-              >
-                Reset Data (Test)
-              </Button>
-            </div>
+            {!isReadOnly ? <WeightageIndicator total={totalWeightage} /> : null}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <Separator />
 
-          {error && (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {error}
-            </div>
-          )}
-
-          {message && (
-            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700">
-              {message}
+          {!loading && isReadOnly && isApprovedLocked && (
+            <div className="flex items-center gap-2 rounded-lg border border-foreground/15 bg-muted/50 px-4 py-3 text-sm">
+              <Lock className="size-4 shrink-0" />
+              <span>Approved goals — editing is disabled</span>
             </div>
           )}
 
@@ -541,15 +659,24 @@ export function GoalSheet({ userId }: GoalSheetProps) {
                   goal={goal}
                   index={index}
                   onChange={updateGoal}
-                  onDelete={deleteGoal}
+                  onDelete={requestDeleteGoal}
                 />
               ))}
             </div>
           ) : null}
 
           {!loading && goals.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-              No goals added yet.
+            <div className="rounded-lg border border-dashed p-8 text-center">
+              <p className="font-medium">
+                {goalSettingOpen
+                  ? "You haven't created goals yet"
+                  : "No goals on file"}
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {goalSettingOpen
+                  ? 'Start by clicking "Add Goal" below. Each goal needs at least 10% weightage and your total must equal 100%.'
+                  : "The goal-setting window is closed. Contact your administrator if you need access."}
+              </p>
             </div>
           ) : null}
 
@@ -595,6 +722,40 @@ export function GoalSheet({ userId }: GoalSheetProps) {
             </Button>
             <Button type="button" onClick={submitGoals} disabled={submitting}>
               {submitting ? "Submitting..." : "Submit Goals"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete goal?</DialogTitle>
+            <DialogDescription>
+              This will permanently remove the goal from your sheet. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmDeleteOpen(false)}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={saving}
+              onClick={async () => {
+                if (pendingDeleteIndex === null) return;
+                await deleteGoal(pendingDeleteIndex);
+                setConfirmDeleteOpen(false);
+                setPendingDeleteIndex(null);
+              }}
+            >
+              {saving ? "Deleting…" : "Delete goal"}
             </Button>
           </DialogFooter>
         </DialogContent>
