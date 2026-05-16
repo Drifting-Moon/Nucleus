@@ -23,7 +23,6 @@ import { hasLockedGoals } from "@/lib/goal-metrics";
 import { getErrorMessage } from "@/lib/map-supabase-error";
 import { validateGoals } from "@/lib/validate-goals";
 import { formatDateTime } from "@/lib/format-datetime";
-import { Badge } from "@/components/ui/badge";
 import { DashboardLoading } from "@/components/dashboard-loading";
 
 const LOCKED_STATUSES = ["approved", "locked"] as const;

@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 
+
+
 const loginTypes = [
   { label: "Employee", email: "employee@test.com" },
   { label: "Manager", email: "manager@test.com" },
