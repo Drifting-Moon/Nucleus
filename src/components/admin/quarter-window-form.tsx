@@ -156,7 +156,9 @@ export function QuarterWindowForm({ windows, adminId }: QuarterWindowFormProps) 
       <CardHeader>
         <CardTitle>Quarter Windows</CardTitle>
         <CardDescription>
-          Set start and end dates for each cycle. Employees can check in only during open Q1–Annual windows.
+          Set start and end dates for each cycle. Employees check in during open Q1–Annual windows. If
+          multiple quarters overlap, the app uses Q1 → Q2 → Q3 → Annual priority (matches the workflow
+          stepper).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

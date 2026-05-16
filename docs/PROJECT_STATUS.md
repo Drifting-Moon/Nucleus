@@ -1,6 +1,6 @@
 # Nucleus Project Status
 
-Last updated: 2026-05-16
+Last updated: 2026-05-16 (quarter overlap priority)
 
 ## Project Summary
 
@@ -111,6 +111,7 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 #### Admin quarter windows
 
 - Admin tab **Quarter Windows:** `goal_setting`, `q1`, `q2`, `q3`, `annual` with start/end dates.
+- Save validates end ≥ start. If multiple check-in windows overlap (demo/hackathon edge case), `getActiveWindow()` always picks **Q1 → Q2 → Q3 → Annual** (matches workflow stepper; not DB row order).
 
 #### Employee check-ins
 
@@ -199,9 +200,9 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 
 ### Demo / test tips
 
-- Set **goal_setting** and check-in quarter dates in Admin → Quarter Windows so **today** falls inside the window you want to test.
+- Set **goal_setting** and check-in quarter dates in Admin → Quarter Windows so **today** falls inside the window you want to test. Prefer **non-overlapping** Q1–Annual ranges in production; overlapping dates are safe but always surface the earliest quarter in cycle order.
 - Optional: `supabase/seed/demo_seed.sql` (skips if employee already has goals).
-- Clear test goals via Supabase SQL or Admin → Unlock Goals before a clean demo run.
+- Reset demo employee goals/check-ins via Supabase SQL (see README) before a clean goal-setting run; **Unlock Goals** edits locked targets only.
 - Demo PDF: any dashboard → **Export PDF** → browser print preview.
 
 ## Verification Status

@@ -22,7 +22,20 @@
 
 # misc
 .DS_Store
+Thumbs.db
 *.pem
+
+# pnpm
+.pnpm-store/
+
+# IDE / editor
+.idea/
+.cursor/
+*.swp
+*.swo
+
+# turborepo / caches
+.turbo
 
 # debug
 npm-debug.log*

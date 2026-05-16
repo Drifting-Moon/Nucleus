@@ -35,6 +35,10 @@ export function isGoalSettingOpen(
   return todayStr >= window.start_date && todayStr <= window.end_date;
 }
 
+function checkinPriority(quarter: CheckinQuarter): number {
+  return CHECKIN_QUARTERS.indexOf(quarter);
+}
+
 /** Returns the open check-in window for today, or null. */
 export function getActiveWindow(
   windows: QuarterWindow[],
@@ -42,14 +46,21 @@ export function getActiveWindow(
 ): (QuarterWindow & { quarter_name: CheckinQuarter }) | null {
   const todayStr = formatDateOnly(today);
 
-  for (const window of windows) {
-    if (!isCheckinQuarter(window.quarter_name)) continue;
-    if (todayStr >= window.start_date && todayStr <= window.end_date) {
-      return window as QuarterWindow & { quarter_name: CheckinQuarter };
+  const openWindows = windows.filter(
+    (w): w is QuarterWindow & { quarter_name: CheckinQuarter } => {
+      if (!isCheckinQuarter(w.quarter_name)) return false;
+      return todayStr >= w.start_date && todayStr <= w.end_date;
     }
-  }
+  );
 
-  return null;
+  if (openWindows.length === 0) return null;
+
+  // When admins overlap windows (common in demos), always pick Q1 → Q2 → Q3 → Annual.
+  openWindows.sort(
+    (a, b) => checkinPriority(a.quarter_name) - checkinPriority(b.quarter_name)
+  );
+
+  return openWindows[0];
 }
 
 /** Next upcoming check-in window after today. */
