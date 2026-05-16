@@ -129,6 +129,18 @@ export default async function AdminDashboard() {
         auditEntries={auditEntries}
         unlockEmployees={unlockEmployees}
         sharedGoalEmployees={sharedGoalEmployees}
+        orgEmployees={employees.map((employee) => ({
+          id: employee.id,
+          name: employee.name || employee.email || "Unknown",
+          email: employee.email || "",
+          department: employee.department,
+          manager_id: employee.manager_id,
+        }))}
+        orgManagers={managers.map((manager) => ({
+          id: manager.id,
+          name: manager.name || manager.email || "Unknown",
+          email: manager.email || "",
+        }))}
       />
     </DashboardShell>
   );

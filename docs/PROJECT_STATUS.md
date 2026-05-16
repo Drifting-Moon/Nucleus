@@ -12,6 +12,8 @@ Nucleus is a role-based performance goals portal for three user types:
 
 The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 
+**Repository:** `https://github.com/Drifting-Moon/Nucleus`
+
 ## Current Stage
 
 | Stage                         | Status   | Notes                                                                 |
@@ -20,7 +22,30 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 | Stage 2 — Employee goal sheet | Complete | BRD one-time submission + window gating enforced                      |
 | Stage 3 — Manager goal review | Complete | Tabbed dashboard, back navigation, submitted-only review queue        |
 | Stage 4 — Quarterly check-ins | Complete | Windows, employee check-ins, manager feedback                         |
-| Stage 5 — Admin governance    | Complete | Completion, export, unlock, audit, push shared goal                   |
+| Stage 5 — Admin governance    | Complete | Completion, export, unlock, audit, push shared goal                 |
+| Polish — UX & demo readiness  | Complete | Branding, avatars, print PDF, locked goal cards, sticky actions       |
+| Stage 6 — Submission polish   | In progress | Weighted scores, org hierarchy UI, check-in history, rich seed     |
+
+## Requirements Coverage (Role × Capability)
+
+| Role | Responsibility | System capability | Status |
+| ---- | -------------- | ----------------- | ------ |
+| **Employee** | Draft goals | Create/edit before submit (goal-setting window) | Done |
+| **Employee** | Quarterly achievements | Check-in form when quarter window open | Done |
+| **Employee** | Progress status | Not Started / On Track / Completed per goal | Done |
+| **Employee** | — | View locked goals (read-only after approval) | Done |
+| **Employee** | — | Input actuals (achievement + auto score) | Done |
+| **Manager** | Approve goals | Team dashboard + review page, inline edit, approve/reject | Done |
+| **Manager** | Quarterly check-ins | Quarterly Feedback tab + per-employee review | Done |
+| **Manager** | Log feedback | Rejection note + `manager_feedback` per quarter | Partial (no full comment history UI) |
+| **Manager** | — | Team dashboard | Done |
+| **Admin** | Configure cycles | Quarter Windows (goal_setting, Q1–Annual) | Done |
+| **Admin** | Org hierarchy | Assign managers (`manager_id`) | Done — **Org Hierarchy** tab |
+| **Admin** | Monitor completion | Completion dashboard (employee + manager tables) | Done |
+| **Admin** | — | Exception handling (unlock goals) | Done |
+| **Admin** | — | Audit logs | Done |
+| **Admin** | — | Push shared / forced KPIs | Done |
+| **Admin** | — | Export reports (CSV/Excel) | Done |
 
 ## BRD Workflow (Canonical)
 
@@ -29,7 +54,7 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 1. Admin opens **goal_setting** window dates.
 2. Employee drafts up to 8 goals (100% weightage total) and submits.
 3. Manager reviews **submitted** goals only → approve (lock) or reject (rework).
-4. After approval, goals are **locked** — no further edits without Admin unlock.
+4. After approval, goals are **`status: locked`** — no further edits without Admin unlock.
 
 ### Phase 2 — Quarterly check-ins (Q1, Q2, Q3, Annual)
 
@@ -52,13 +77,13 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
   - `/dashboard/manager/checkin/[employeeId]`
   - `/dashboard/admin`
   - `/api/admin/export`
-- `DashboardShell`: logout, theme toggle, optional **Back to team** link on manager detail pages.
-- Role-specific Quick Guide cards on each dashboard.
+- `DashboardShell`: **Nucleus** branding, logout, theme toggle, **Export PDF** (`window.print()`), optional **Back to team** on manager detail pages.
+- Collapsible role-specific Quick Guide on each dashboard.
 - Sonner toasts for save/submit/approve actions.
 
 ### Stage 2 — Employee Goal Sheet
 
-- Goal sheet with workflow stepper and summary cards.
+- Goal sheet with workflow stepper and summary cards (quarter status card highlighted).
 - Fields: Thrust Area, Title, Description, UoM, Target, Weightage, Delete.
 - UoM: `number`, `percentage`, `timeline`, `zero_based`.
 - Thrust areas: Business, Customer, Operations, People, Compliance.
@@ -68,13 +93,17 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 - **Rework:** Rejected goals editable when goal-setting open or in rework (no locked goals).
 - **Shared/forced goals** (`is_shared`): title, target, thrust area, UoM, description locked; weightage editable.
 - Submitted goals read-only until manager acts; resubmit clears `rejection_reason`.
+- **Locked goal display:** `LockedGoalCard` with labeled fields; timeline shows due date, not raw numbers.
+- **Sticky actions:** Save Draft / Submit bar sticks to bottom while scrolling.
+
 ### Stage 3 — Manager Goal Review
 
 - Manager dashboard uses **tabs:** Goal Review | Quarterly Feedback (`ManagerTabs`).
-- Goal Review: team list with status badges (Not Submitted, Awaiting Review, Approved, Rejected).
+- Goal Review: team list with avatars, status badges, **clickable rows** → review page.
+- Empty state: “Nothing to review right now…” when no submissions pending.
 - Review page: **only `submitted` goals** shown for approve/reject (locked/rejected history hidden).
 - Manager can edit submitted targets, deadlines, weightage; approve requires 100% on submitted set only.
-- Approve → `approved` + `is_locked = true`; Reject → `rejected` + note on `users.rejection_reason`.
+- Approve → `status: locked`; Reject → `rejected` + note on `users.rejection_reason`.
 - **Back to team** link on review and check-in detail pages.
 
 ### Stage 4 — Quarterly Check-ins
@@ -85,15 +114,16 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 
 #### Employee check-ins
 
-- `CheckinGate` below goal sheet; gated until all goals approved/locked.
-- Closed window: blocked message + next window date from `getNextWindow()`.
-- Open window: achievement + status (`not_started`, `on_track`, `completed`) per locked goal.
-- **Scoring** (`calculate-score.ts`):
+- `CheckinGate` below goal sheet; opens when employee has locked goals and no draft/submitted goals blocking.
+- Closed window: blocked message + next window date (`formatDisplayDate`).
+- Open window: achievement + status per locked goal.
+- **Scoring** (`calculate-score.ts` + `score_direction` on goals):
   - `higher` (default): achievement ÷ target
   - `lower`: target ÷ achievement
   - `zero_based`: achievement 0 → 100%, else 0%
   - `timeline`: date compare (on/before target date = 100%)
-- Score display: green ≥ 100%, yellow 50–99%, red &lt; 50%.
+- **Score formula hint** (info icon) shows BRD formula per row.
+- Score display: green ≥ 100%, yellow 50–99%, red &lt; 50% (dark-mode safe).
 - Submit writes `quarterly_updates` with `score`, `submitted_at`, `achievement_date`.
 
 #### Manager check-in review
@@ -105,11 +135,35 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 ### Stage 5 — Admin Governance
 
 - Admin dashboard tabs: **Completion** | **Quarter Windows** | **Export** | **Push Shared Goal** | **Audit Log** | **Unlock Goals**.
-- **Completion dashboard:** employee and manager rows; Q1/Q2/Q3/Annual cells (submitted / pending / N/A).
-- **Export:** CSV and Excel via `/api/admin/export` (employee, goal, targets, quarterly achievements/scores).
-- **Unlock & edit:** search employee, edit locked goal target/weightage, save & re-lock.
-- **Audit log:** viewer for `audit_logs` (unlock field changes + shared goal assignments).
-- **Push shared goal:** multi-select employees, assign forced KPI (`is_shared = true`, draft); skips employees with locked goals.
+- **Completion dashboard:** employee and manager tables with avatars; Q1/Q2/Q3/Annual cells.
+- **Export:** CSV and Excel via `/api/admin/export`.
+- **Unlock & edit:** search employee, edit locked goal, save & re-lock; changes audit-logged.
+- **Audit log:** viewer for `audit_logs` (field-level unlock edits + shared goal assignments).
+- **Push shared goal:** multi-select employees, assign forced KPI (`is_shared = true`, draft).
+
+### Polish Phase (UX)
+
+- Print-friendly layout (`print:hidden` on chrome; print CSS in `globals.css`).
+- User initials avatars on manager team list and admin completion tables.
+- Human-readable dates via `formatDisplayDate()`.
+- Stronger workflow stepper (current step filled; completed steps green).
+- Manager approve flow uses **`status: locked`** (app no longer writes `is_locked`).
+
+### Stage 6 — Submission polish
+
+- **Weighted overall score** (employee summary card): Σ (avg score per goal × weightage) when check-ins submitted.
+- **Team avg score** (manager Goal Review tab): same formula across direct reports.
+- **Org hierarchy** (Admin tab): assign `manager_id` per employee with Save.
+- **Past check-ins** (employee): read-only table grouped by quarter.
+- **Rich demo seed** (`supabase/seed/demo_seed.sql`): 5 locked goals incl. shared KPI, Q1+Q2 check-ins, audit rows.
+
+### Stage 6 — Not implemented (optional / submission prep)
+
+- Unified comment timeline UI
+- Admin analytics charts (recharts)
+- Email notifications (Resend)
+- Completion dashboard escalation highlights
+- Vercel deploy + architecture diagram (manual submission steps)
 
 ### Auth / Routing
 
@@ -129,6 +183,8 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 
 **Tables:** `users`, `goals`, `quarterly_updates`, `quarter_windows`, `audit_logs`
 
+**Note:** `goals.is_locked` column exists from Stage 1 but the app relies on `status` (`approved` / `locked`) for lock semantics.
+
 ## Supabase Setup
 
 ### Fresh setup (run in order)
@@ -145,21 +201,23 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 
 - Set **goal_setting** and check-in quarter dates in Admin → Quarter Windows so **today** falls inside the window you want to test.
 - Optional: `supabase/seed/demo_seed.sql` (skips if employee already has goals).
-- Clear test goals via Supabase SQL or Admin unlock if needed before a clean demo run.
+- Clear test goals via Supabase SQL or Admin → Unlock Goals before a clean demo run.
+- Demo PDF: any dashboard → **Export PDF** → browser print preview.
 
 ## Verification Status
 
 - `pnpm lint` — passes
 - `pnpm build` — passes
 - Next.js 16 warns `middleware.ts` is deprecated (proxy convention) — non-blocking
-- End-to-end browser test recommended after DB migrations
+- Full cycle browser-tested recommended before judging
 
 ## Next Up
 
-1. Browser-test full cycle: goal setting → submit → manager approve → check-in → manager feedback → admin export.
-2. Tighten RLS policies for production.
-3. Align thrust-area labels with Atomberg final list if needed.
-4. Optional: check-in history view for past quarters (read-only).
+1. Deploy to Vercel + add live URL to README.
+2. Run `demo_seed.sql` on a clean demo employee before judging.
+3. Architecture diagram (Excalidraw) for submission PDF.
+4. Optional: comment timeline, charts, email, escalation highlights.
+5. Tighten RLS for production; drop unused `goals.is_locked` column in a future migration.
 
 ## Useful Files
 
@@ -177,12 +235,16 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 
 - `src/components/goals/goal-sheet.tsx`
 - `src/components/goals/goal-form-row.tsx`
+- `src/components/goals/locked-goal-card.tsx`
 - `src/components/goals/weightage-indicator.tsx`
 - `src/components/employee/workflow-stepper.tsx`
 - `src/components/employee/goal-summary-cards.tsx`
+- `src/components/employee/checkin-history.tsx`
+- `src/lib/calculate-weighted-score.ts`
 - `src/lib/validate-goals.ts`
 - `src/lib/goal-metrics.ts`
 - `src/lib/employee-workflow.ts`
+- `src/lib/format-goal-target.ts`
 
 **Check-ins**
 
@@ -190,10 +252,13 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 - `src/components/checkins/checkin-form.tsx`
 - `src/components/checkins/checkin-row.tsx`
 - `src/components/checkins/score-display.tsx`
+- `src/components/score-formula-hint.tsx`
 - `src/lib/calculate-score.ts`
+- `src/lib/score-formula.ts`
 - `src/lib/get-active-window.ts`
 - `src/lib/validate-checkin.ts`
 - `src/lib/quarter-labels.ts`
+- `src/lib/format-date.ts`
 
 **Manager**
 
@@ -214,6 +279,7 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 - `src/components/admin/unlock-tool.tsx`
 - `src/components/admin/unlock-dialog.tsx`
 - `src/components/admin/audit-log-viewer.tsx`
+- `src/components/admin/org-hierarchy-form.tsx`
 - `src/lib/admin/completion-data.ts`
 - `src/lib/build-export-data.ts`
 - `src/lib/write-audit-log.ts`
@@ -221,6 +287,8 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 **Shared**
 
 - `src/components/dashboard-shell.tsx`
+- `src/components/print-dashboard-button.tsx`
+- `src/components/user-avatar.tsx`
 - `src/components/quick-guide.tsx`
 - `src/components/theme-toggle.tsx`
 - `src/components/app-toaster.tsx`
@@ -236,8 +304,8 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 
 ## Current Limitations
 
-- RLS remains permissive for hackathon/demo speed — tighten before production.
-- `is_locked` boolean and `status = 'locked'` both used; consider consolidating later.
-- Check-in history (view/edit past quarters) not implemented.
-- Push shared goal requires `score_direction` migration; employees with locked goals are skipped.
-- Manager/employee flows should be re-verified in browser after each schema change.
+- **Feedback logs:** rejection reason + quarterly `manager_feedback` only; no unified comment timeline UI.
+- RLS remains permissive for hackathon/demo speed.
+- `goals.is_locked` column unused by app (legacy from schema); lock = `status` in (`approved`, `locked`).
+- Check-in history (view past quarters) not implemented.
+- Push shared goal skips employees who already have locked goals for the cycle.

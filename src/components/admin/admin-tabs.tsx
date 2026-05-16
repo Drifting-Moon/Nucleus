@@ -9,6 +9,11 @@ import {
   PushSharedGoalForm,
   type PushSharedGoalEmployee,
 } from "@/components/admin/push-shared-goal-form";
+import {
+  OrgHierarchyForm,
+  type OrgEmployee,
+  type OrgManager,
+} from "@/components/admin/org-hierarchy-form";
 import { UnlockTool, type EmployeeWithLockedGoals } from "@/components/admin/unlock-tool";
 import type {
   EmployeeCompletionRow,
@@ -18,6 +23,7 @@ import { cn } from "@/lib/utils";
 
 const TABS = [
   { id: "completion", label: "Completion" },
+  { id: "hierarchy", label: "Org Hierarchy" },
   { id: "windows", label: "Quarter Windows" },
   { id: "export", label: "Export" },
   { id: "shared", label: "Push Shared Goal" },
@@ -35,6 +41,8 @@ type AdminTabsProps = {
   auditEntries: AuditLogEntry[];
   unlockEmployees: EmployeeWithLockedGoals[];
   sharedGoalEmployees: PushSharedGoalEmployee[];
+  orgEmployees: OrgEmployee[];
+  orgManagers: OrgManager[];
 };
 
 export function AdminTabs({
@@ -45,6 +53,8 @@ export function AdminTabs({
   auditEntries,
   unlockEmployees,
   sharedGoalEmployees,
+  orgEmployees,
+  orgManagers,
 }: AdminTabsProps) {
   const [active, setActive] = useState<TabId>("completion");
 
@@ -70,6 +80,9 @@ export function AdminTabs({
 
       {active === "completion" && (
         <CompletionDashboard employees={employeeRows} managers={managerRows} />
+      )}
+      {active === "hierarchy" && (
+        <OrgHierarchyForm employees={orgEmployees} managers={orgManagers} />
       )}
       {active === "windows" && <QuarterWindowForm windows={windows} adminId={adminId} />}
       {active === "export" && <ExportButton />}

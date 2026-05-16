@@ -4,6 +4,7 @@ import type { TeamCheckinMember } from "@/components/manager/team-checkin-overvi
 import type { TeamMemberSummary } from "@/components/manager/team-overview";
 import { QuickGuide } from "@/components/quick-guide";
 import { requireRole } from "@/lib/auth";
+import { calculateWeightedOverallScore } from "@/lib/calculate-weighted-score";
 import { getActiveWindow, type QuarterWindow } from "@/lib/get-active-window";
 import { buildTeamCheckinMembers } from "@/lib/team-checkin-status";
 import { createClient } from "@/lib/supabase-server";
@@ -27,8 +28,27 @@ export default async function ManagerDashboard() {
   const teamIds = team?.map((member) => member.id) ?? [];
 
   const { data: goals } = teamIds.length
-    ? await supabase.from("goals").select("id, user_id, status").in("user_id", teamIds)
+    ? await supabase
+        .from("goals")
+        .select("id, user_id, status, weightage")
+        .in("user_id", teamIds)
     : { data: [] };
+
+  const teamGoalIds = (goals ?? [])
+    .filter((goal) => goal.status === "approved" || goal.status === "locked")
+    .map((goal) => goal.id);
+
+  const { data: teamUpdates } = teamGoalIds.length
+    ? await supabase
+        .from("quarterly_updates")
+        .select("goal_id, score, submitted_at")
+        .in("goal_id", teamGoalIds)
+    : { data: [] };
+
+  const teamAvgScore = calculateWeightedOverallScore(
+    (goals ?? []).filter((goal) => goal.status === "approved" || goal.status === "locked"),
+    teamUpdates ?? []
+  );
 
   const members: TeamMemberSummary[] = (team ?? []).map((member) => {
     const memberGoals = (goals ?? []).filter((goal) => goal.user_id === member.id);
@@ -95,6 +115,7 @@ export default async function ManagerDashboard() {
         members={members}
         activeQuarter={activeQuarter}
         checkinMembers={checkinMembers}
+        teamAvgScore={teamAvgScore}
       />
     </DashboardShell>
   );

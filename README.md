@@ -1,34 +1,51 @@
 # Nucleus
 
-Nucleus is a role-based performance goals portal for employees, managers, and admins.
+Nucleus is a role-based performance goals portal for employees, managers, and admins — goal setting once per cycle, quarterly check-ins, and admin governance.
 
-## Current Status
+## Demo credentials
 
-Stage 1 foundation is in place:
+| Role | Email | Password |
+| ---- | ----- | -------- |
+| Employee | `employee@test.com` | `password123` |
+| Manager | `manager@test.com` | `password123` |
+| Admin | `admin@test.com` | `password123` |
 
-- Supabase Auth login
-- Employee, Manager, and Admin role selection
-- server-side dashboard role guards
-- dashboard shells with logout
-- Supabase migration for users, goals, quarterly updates, audit logs, and quarter windows
+Select the matching role on the login screen.
 
-For the latest implementation notes and next steps, see:
+## Live URL
 
-[docs/PROJECT_STATUS.md](./docs/PROJECT_STATUS.md)
+_Add your Vercel deployment URL here after `vercel deploy`._
 
-## Local Development
+## Local development
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Required environment variables:
+Environment variables (`.env.local`):
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ```
+
+## Database setup
+
+Run migrations in order (Supabase SQL Editor):
+
+1. `supabase/migrations/202605160001_stage1_foundation.sql`
+2. `supabase/migrations/202605160002_stage4_quarterly.sql`
+3. `supabase/migrations/202605160003_goals_updated_at.sql`
+4. `supabase/migrations/202605160004_goals_score_direction.sql`
+
+Optional rich demo data (only if demo employee has no goals yet):
+
+```bash
+# Paste contents of supabase/seed/demo_seed.sql into SQL Editor
+```
+
+Set quarter window dates in **Admin → Quarter Windows** so today falls inside the window you want to demo.
 
 ## Verification
 
@@ -36,3 +53,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 pnpm lint
 pnpm build
 ```
+
+## Documentation
+
+Full implementation status, BRD workflow, and file index:
+
+[docs/PROJECT_STATUS.md](./docs/PROJECT_STATUS.md)

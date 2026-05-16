@@ -1,6 +1,7 @@
 import { CheckinGate } from "@/components/checkins/checkin-gate";
 import type { CheckinUpdateRecord } from "@/components/checkins/checkin-form";
 import type { CheckinGoal } from "@/components/checkins/checkin-row";
+import { CheckinHistory, type CheckinHistoryRow } from "@/components/employee/checkin-history";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { GoalSummaryCards } from "@/components/employee/goal-summary-cards";
 import { WorkflowStepper } from "@/components/employee/workflow-stepper";
@@ -8,6 +9,7 @@ import { GoalSheet } from "@/components/goals/goal-sheet";
 import { QuickGuide } from "@/components/quick-guide";
 import { Separator } from "@/components/ui/separator";
 import { requireRole } from "@/lib/auth";
+import { calculateWeightedOverallScore } from "@/lib/calculate-weighted-score";
 import { isQuarterSubmitted } from "@/lib/employee-workflow";
 import { getWorkflowGoals } from "@/lib/goal-metrics";
 import {
@@ -34,7 +36,7 @@ export default async function EmployeeDashboard() {
 
   const { data: allGoals } = await supabase
     .from("goals")
-    .select("id, status, weightage")
+    .select("id, status, weightage, title, uom, target, target_date")
     .eq("user_id", user.id);
 
   const { data: checkinGoals } = await supabase
@@ -54,18 +56,49 @@ export default async function EmployeeDashboard() {
     .filter((goal) => goal.status === "approved" || goal.status === "locked")
     .map((goal) => goal.id);
 
+  const scoreGoals = allGoalsList.filter(
+    (goal) => goal.status === "approved" || goal.status === "locked"
+  );
+
   const { data: allUpdates } = allGoalIds.length
     ? await supabase
         .from("quarterly_updates")
-        .select("goal_id, quarter, submitted_at")
+        .select(
+          "id, goal_id, quarter, achievement, achievement_date, status, score, submitted_at"
+        )
         .in("goal_id", allGoalIds)
     : { data: [] };
 
+  const updatesList = allUpdates ?? [];
+  const goalById = new Map(allGoalsList.map((goal) => [goal.id, goal]));
+
+  const historyRows: CheckinHistoryRow[] = updatesList
+    .filter((row) => row.submitted_at)
+    .map((row) => {
+      const goal = goalById.get(row.goal_id);
+      return {
+        id: row.id,
+        quarter: row.quarter,
+        goal_id: row.goal_id,
+        goal_title: goal?.title ?? "Goal",
+        uom: goal?.uom ?? null,
+        target: goal?.target ?? null,
+        target_date: goal?.target_date ?? null,
+        achievement: row.achievement,
+        achievement_date: row.achievement_date,
+        status: row.status,
+        score: row.score,
+        submitted_at: row.submitted_at,
+      };
+    });
+
+  const overallScore = calculateWeightedOverallScore(scoreGoals, updatesList);
+
   const quarterSubmitted = {
-    q1: isQuarterSubmitted("q1", approvedGoalIds, allUpdates ?? [], allGoalsList),
-    q2: isQuarterSubmitted("q2", approvedGoalIds, allUpdates ?? [], allGoalsList),
-    q3: isQuarterSubmitted("q3", approvedGoalIds, allUpdates ?? [], allGoalsList),
-    annual: isQuarterSubmitted("annual", approvedGoalIds, allUpdates ?? [], allGoalsList),
+    q1: isQuarterSubmitted("q1", approvedGoalIds, updatesList, allGoalsList),
+    q2: isQuarterSubmitted("q2", approvedGoalIds, updatesList, allGoalsList),
+    q3: isQuarterSubmitted("q3", approvedGoalIds, updatesList, allGoalsList),
+    annual: isQuarterSubmitted("annual", approvedGoalIds, updatesList, allGoalsList),
   } satisfies Record<CheckinQuarter, boolean>;
 
   const hasPendingGoals = allGoalsList.some(
@@ -76,13 +109,18 @@ export default async function EmployeeDashboard() {
   let checkinUpdates: CheckinUpdateRecord[] = [];
 
   if (activeWindow && approvedGoalIds.length > 0) {
-    const { data: existingUpdates } = await supabase
-      .from("quarterly_updates")
-      .select("id, goal_id, quarter, achievement, achievement_date, status, score, submitted_at")
-      .in("goal_id", approvedGoalIds)
-      .eq("quarter", activeWindow.quarter_name);
-
-    checkinUpdates = (existingUpdates ?? []) as CheckinUpdateRecord[];
+    checkinUpdates = updatesList
+      .filter((row) => row.quarter === activeWindow.quarter_name)
+      .map((row) => ({
+        id: row.id,
+        goal_id: row.goal_id,
+        quarter: row.quarter,
+        achievement: row.achievement,
+        achievement_date: row.achievement_date,
+        status: row.status,
+        score: row.score,
+        submitted_at: row.submitted_at,
+      })) as CheckinUpdateRecord[];
   }
 
   return (
@@ -96,7 +134,8 @@ export default async function EmployeeDashboard() {
         <GoalSummaryCards
           goals={workflowGoals.length > 0 ? workflowGoals : allGoalsList}
           activeQuarter={activeWindow?.quarter_name ?? null}
-          updates={allUpdates ?? []}
+          updates={updatesList}
+          overallScore={overallScore}
         />
       </div>
       <GoalSheet userId={user.id} goalSettingOpen={goalSettingOpen} />
@@ -119,6 +158,7 @@ export default async function EmployeeDashboard() {
           }
         />
       )}
+      <CheckinHistory rows={historyRows} />
     </DashboardShell>
   );
 }

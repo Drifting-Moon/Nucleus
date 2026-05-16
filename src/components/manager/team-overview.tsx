@@ -30,6 +30,7 @@ export type TeamMemberSummary = {
 
 type TeamOverviewProps = {
   members: TeamMemberSummary[];
+  teamAvgScore?: number | null;
 };
 
 const statusLabels: Record<TeamMemberStatus, string> = {
@@ -46,7 +47,7 @@ const statusVariants: Record<TeamMemberStatus, "outline" | "secondary" | "defaul
   rejected: "destructive",
 };
 
-export function TeamOverview({ members }: TeamOverviewProps) {
+export function TeamOverview({ members, teamAvgScore = null }: TeamOverviewProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
@@ -81,7 +82,12 @@ export function TeamOverview({ members }: TeamOverviewProps) {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 md:grid-cols-3">
+      <div
+        className={cn(
+          "grid gap-3 md:grid-cols-2",
+          teamAvgScore != null ? "lg:grid-cols-4" : "lg:grid-cols-3"
+        )}
+      >
         <Card>
           <CardHeader>
             <CardTitle>Total Team Members</CardTitle>
@@ -100,6 +106,19 @@ export function TeamOverview({ members }: TeamOverviewProps) {
           </CardHeader>
           <CardContent className="text-3xl font-semibold">{approved}</CardContent>
         </Card>
+        {teamAvgScore != null ? (
+          <Card className="border-primary/40 bg-primary/5 ring-1 ring-primary/20">
+            <CardHeader>
+              <CardTitle className="text-primary">Team avg score</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-semibold text-primary">{teamAvgScore}%</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Weighted across submitted check-ins
+              </p>
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
 
       <Card>

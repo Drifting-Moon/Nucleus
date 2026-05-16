@@ -19,9 +19,15 @@ type ManagerTabsProps = {
   members: TeamMemberSummary[];
   activeQuarter: CheckinQuarter | null;
   checkinMembers: TeamCheckinMember[] | null;
+  teamAvgScore?: number | null;
 };
 
-export function ManagerTabs({ members, activeQuarter, checkinMembers }: ManagerTabsProps) {
+export function ManagerTabs({
+  members,
+  activeQuarter,
+  checkinMembers,
+  teamAvgScore = null,
+}: ManagerTabsProps) {
   const [active, setActive] = useState<TabId>("goals");
 
   return (
@@ -44,7 +50,7 @@ export function ManagerTabs({ members, activeQuarter, checkinMembers }: ManagerT
         ))}
       </div>
 
-      {active === "goals" && <TeamOverview members={members} />}
+      {active === "goals" && <TeamOverview members={members} teamAvgScore={teamAvgScore} />}
 
       {active === "checkins" &&
         (activeQuarter && checkinMembers ? (

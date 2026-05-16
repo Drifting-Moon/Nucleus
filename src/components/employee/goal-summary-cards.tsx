@@ -14,9 +14,15 @@ type GoalSummaryCardsProps = {
   goals: { id: string; status: string; weightage: number | null }[];
   activeQuarter: CheckinQuarter | null;
   updates: { goal_id: string; quarter: string; submitted_at: string | null }[];
+  overallScore?: number | null;
 };
 
-export function GoalSummaryCards({ goals, activeQuarter, updates }: GoalSummaryCardsProps) {
+export function GoalSummaryCards({
+  goals,
+  activeQuarter,
+  updates,
+  overallScore = null,
+}: GoalSummaryCardsProps) {
   const weightageSummary = getSheetWeightageSummary(goals);
   const locked = getLockedGoals(goals);
   const active = getActiveSheetGoals(goals);
@@ -52,11 +58,30 @@ export function GoalSummaryCards({ goals, activeQuarter, updates }: GoalSummaryC
       warn: goalsInSheet > 0 && !weightageSummary.isValid,
     },
     { label: "Approved / locked", value: String(approvedCount), highlight: false, warn: false },
-    { label: "Quarter status", value: quarterStatus, highlight: true, warn: false },
+    {
+      label: "Quarter status",
+      value: quarterStatus,
+      highlight: overallScore == null,
+      warn: false,
+    },
   ];
 
+  if (overallScore != null) {
+    items.push({
+      label: "Overall score",
+      value: `${overallScore}%`,
+      highlight: true,
+      warn: false,
+    });
+  }
+
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 print:grid-cols-4">
+    <div
+      className={cn(
+        "grid gap-3 sm:grid-cols-2 print:grid-cols-2",
+        overallScore != null ? "lg:grid-cols-5" : "lg:grid-cols-4"
+      )}
+    >
       {items.map((item) => (
         <Card
           key={item.label}
@@ -86,6 +111,11 @@ export function GoalSummaryCards({ goals, activeQuarter, updates }: GoalSummaryC
             >
               {item.value}
             </p>
+            {item.label === "Overall score" ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Weighted by goal weightage across submitted check-ins
+              </p>
+            ) : null}
           </CardContent>
         </Card>
       ))}
