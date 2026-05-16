@@ -73,7 +73,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4 relative overflow-hidden">
+      {loading && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="w-64 h-64">
+            <Fries animationData={friesData} loop={true} />
+          </div>
+          <p className="mt-4 text-xl font-bold tracking-tight animate-pulse text-primary">
+            Signing you in...
+          </p>
+        </div>
+      )}
       <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>
