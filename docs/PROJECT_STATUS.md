@@ -46,6 +46,8 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 | **Admin** | — | Audit logs | Done |
 | **Admin** | — | Push shared / forced KPIs | Done |
 | **Admin** | — | Export reports (CSV/Excel) | Done |
+| **Admin** | Manage users | People tab to create/manage employees, managers, and admins | Done |
+| **Admin** | Escalate | Escalation center to highlight completion bottlenecks | Done |
 
 ## BRD Workflow (Canonical)
 
@@ -135,8 +137,10 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 
 ### Stage 5 — Admin Governance
 
-- Admin dashboard tabs: **Completion** | **Quarter Windows** | **Export** | **Push Shared Goal** | **Audit Log** | **Unlock Goals**.
+- **Admin dashboard tabs:** **Completion** | **People** | **Escalations** | **Analytics** | **Org Hierarchy** | **Quarter Windows** | **Export** | **Push Shared Goal** | **Audit Log** | **Unlock Goals**.
 - **Completion dashboard:** employee and manager tables with avatars; Q1/Q2/Q3/Annual cells.
+- **People Management:** UI to create and manage users (roles, managers) leveraging `/api/admin/users`.
+- **Escalation Center:** dedicated module highlighting employees who missed goal-setting or check-in deadlines.
 - **Export:** CSV and Excel via `/api/admin/export`.
 - **Unlock & edit:** search employee, edit locked goal, save & re-lock; changes audit-logged.
 - **Audit log:** viewer for `audit_logs` (field-level unlock edits + shared goal assignments).
@@ -194,9 +198,10 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 2. `supabase/migrations/202605160002_stage4_quarterly.sql`
 3. `supabase/migrations/202605160003_goals_updated_at.sql`
 4. `supabase/migrations/202605160004_goals_score_direction.sql`
-5. Create Auth users: `employee@test.com`, `manager@test.com`, `admin@test.com`
-6. Confirm `public.users` roles and employee `manager_id` → manager
-7. `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+5. `supabase/migrations/202605170001_escalation_module.sql`
+6. Create Auth users: `employee@test.com`, `manager@test.com`, `admin@test.com` (Or run `supabase/seed/reset_to_core_demo_users.sql` / `supabase/seed/demo_org_15_employees.sql` in SQL Editor).
+7. Confirm `public.users` roles and employee `manager_id` → manager
+8. `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` (required for Admin People Management).
 
 ### Demo / test tips
 
@@ -283,6 +288,8 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 
 - `src/components/admin/admin-tabs.tsx`
 - `src/components/admin/completion-dashboard.tsx`
+- `src/components/admin/people-management.tsx`
+- `src/components/admin/escalation-center.tsx`
 - `src/components/admin/quarter-window-form.tsx`
 - `src/components/admin/export-button.tsx`
 - `src/components/admin/push-shared-goal-form.tsx`
@@ -291,6 +298,7 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 - `src/components/admin/audit-log-viewer.tsx`
 - `src/components/admin/org-hierarchy-form.tsx`
 - `src/lib/admin/completion-data.ts`
+- `src/lib/admin/escalation-data.ts`
 - `src/lib/build-export-data.ts`
 - `src/lib/write-audit-log.ts`
 
@@ -311,6 +319,7 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 - `supabase/migrations/202605160002_stage4_quarterly.sql`
 - `supabase/migrations/202605160003_goals_updated_at.sql`
 - `supabase/migrations/202605160004_goals_score_direction.sql`
+- `supabase/migrations/202605170001_escalation_module.sql`
 
 ## Current Limitations
 

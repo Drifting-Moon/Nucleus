@@ -55,3 +55,7 @@ next-env.d.ts
 
 # Hackathon Requirements
 .atomquest_roadmap.md
+
+# Supabase local state
+supabase/.temp/
+supabase/.branches/
