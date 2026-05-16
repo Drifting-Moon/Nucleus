@@ -7,6 +7,19 @@ import {
   buildEmployeeCompletionRows,
   buildManagerCompletionRows,
 } from "@/lib/admin/completion-data";
+import {
+  buildCompletionRatesChartData,
+  buildManagerReviewChartData,
+  toCompletionPercentRows,
+} from "@/lib/admin/completion-chart-data";
+import { buildScoreDistribution } from "@/lib/admin/score-distribution-data";
+import { buildManagerEffectiveness } from "@/lib/admin/manager-effectiveness-data";
+import { buildQoqTrendSeries } from "@/lib/admin/qoq-chart-data";
+import {
+  buildStatusDistribution,
+  buildThrustDistribution,
+  buildUomDistribution,
+} from "@/lib/admin/goal-distribution";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase-server";
 
@@ -32,8 +45,10 @@ export default async function AdminDashboard() {
       .select("id, quarter_name, start_date, end_date")
       .order("quarter_name", { ascending: true }),
     supabase.from("users").select("id, name, email, department, role, manager_id"),
-    supabase.from("goals").select("id, user_id, status, title, uom, target, target_date, weightage"),
-    supabase.from("quarterly_updates").select("goal_id, quarter, submitted_at"),
+    supabase
+      .from("goals")
+      .select("id, user_id, status, title, uom, target, target_date, weightage, thrust_area"),
+    supabase.from("quarterly_updates").select("goal_id, quarter, score, submitted_at"),
     supabase
       .from("audit_logs")
       .select("id, changed_at, changed_by, goal_id, field_changed, old_value, new_value")
@@ -46,6 +61,15 @@ export default async function AdminDashboard() {
   const allGoals = goals ?? [];
   const allUpdates = updates ?? [];
 
+  const distributionGoals = allGoals.map((goal) => ({
+    thrust_area: goal.thrust_area,
+    uom: goal.uom,
+    status: goal.status,
+  }));
+  const analyticsByThrust = buildThrustDistribution(distributionGoals);
+  const analyticsByUom = buildUomDistribution(distributionGoals);
+  const analyticsByStatus = buildStatusDistribution(distributionGoals);
+
   const employeeRows = buildEmployeeCompletionRows(
     employees,
     allGoals,
@@ -54,6 +78,28 @@ export default async function AdminDashboard() {
   );
 
   const managerRows = buildManagerCompletionRows(managers, users ?? [], allGoals);
+  const completionChartData = toCompletionPercentRows(
+    buildCompletionRatesChartData(employeeRows),
+    employees.length
+  );
+  const managerReviewChartData = buildManagerReviewChartData(managerRows);
+  const scoreDistribution = buildScoreDistribution(allUpdates);
+  const managerEffectiveness = buildManagerEffectiveness(
+    managers,
+    employees,
+    allGoals,
+    allUpdates,
+    windows ?? []
+  );
+
+  const { departments: qoqDepartments, series: qoqSeries } = buildQoqTrendSeries(
+    employees.map((employee) => ({
+      id: employee.id,
+      department: employee.department,
+    })),
+    allGoals,
+    allUpdates
+  );
 
   const userMap = new Map((users ?? []).map((u) => [u.id, u]));
   const goalMap = new Map(allGoals.map((g) => [g.id, g]));
@@ -141,6 +187,18 @@ export default async function AdminDashboard() {
           name: manager.name || manager.email || "Unknown",
           email: manager.email || "",
         }))}
+        analyticsByThrust={analyticsByThrust}
+        analyticsByUom={analyticsByUom}
+        analyticsByStatus={analyticsByStatus}
+        analyticsTotalGoals={allGoals.length}
+        completionChartData={completionChartData}
+        managerReviewChartData={managerReviewChartData}
+        scoreDistribution={scoreDistribution}
+        analyticsEmployeeCount={employees.length}
+        analyticsManagerCount={managers.length}
+        qoqDepartments={qoqDepartments}
+        qoqSeries={qoqSeries}
+        managerEffectiveness={managerEffectiveness}
       />
     </DashboardShell>
   );

@@ -14,15 +14,25 @@ import {
   type OrgEmployee,
   type OrgManager,
 } from "@/components/admin/org-hierarchy-form";
+import { AnalyticsDashboard } from "@/components/admin/analytics-dashboard";
 import { UnlockTool, type EmployeeWithLockedGoals } from "@/components/admin/unlock-tool";
 import type {
   EmployeeCompletionRow,
   ManagerCompletionRow,
 } from "@/lib/admin/completion-data";
+import type {
+  CompletionChartRow,
+  ManagerReviewChartRow,
+} from "@/lib/admin/completion-chart-data";
+import type { ScoreBucket } from "@/lib/admin/score-distribution-data";
+import type { ManagerEffectivenessResult } from "@/lib/admin/manager-effectiveness-data";
+import type { QoqTrendSeries } from "@/lib/admin/qoq-chart-data";
+import type { DistributionSlice } from "@/lib/admin/goal-distribution";
 import { cn } from "@/lib/utils";
 
 const TABS = [
   { id: "completion", label: "Completion" },
+  { id: "analytics", label: "Analytics" },
   { id: "hierarchy", label: "Org Hierarchy" },
   { id: "windows", label: "Quarter Windows" },
   { id: "export", label: "Export" },
@@ -43,6 +53,18 @@ type AdminTabsProps = {
   sharedGoalEmployees: PushSharedGoalEmployee[];
   orgEmployees: OrgEmployee[];
   orgManagers: OrgManager[];
+  analyticsByThrust: DistributionSlice[];
+  analyticsByUom: DistributionSlice[];
+  analyticsByStatus: DistributionSlice[];
+  analyticsTotalGoals: number;
+  completionChartData: CompletionChartRow[];
+  managerReviewChartData: ManagerReviewChartRow[];
+  scoreDistribution: ScoreBucket[];
+  analyticsEmployeeCount: number;
+  analyticsManagerCount: number;
+  qoqDepartments: string[];
+  qoqSeries: QoqTrendSeries;
+  managerEffectiveness: ManagerEffectivenessResult;
 };
 
 export function AdminTabs({
@@ -55,6 +77,18 @@ export function AdminTabs({
   sharedGoalEmployees,
   orgEmployees,
   orgManagers,
+  analyticsByThrust,
+  analyticsByUom,
+  analyticsByStatus,
+  analyticsTotalGoals,
+  completionChartData,
+  managerReviewChartData,
+  scoreDistribution,
+  analyticsEmployeeCount,
+  analyticsManagerCount,
+  qoqDepartments,
+  qoqSeries,
+  managerEffectiveness,
 }: AdminTabsProps) {
   const [active, setActive] = useState<TabId>("completion");
 
@@ -80,6 +114,22 @@ export function AdminTabs({
 
       {active === "completion" && (
         <CompletionDashboard employees={employeeRows} managers={managerRows} />
+      )}
+      {active === "analytics" && (
+        <AnalyticsDashboard
+          byThrust={analyticsByThrust}
+          byUom={analyticsByUom}
+          byStatus={analyticsByStatus}
+          totalGoals={analyticsTotalGoals}
+          completionChartData={completionChartData}
+          managerReviewChartData={managerReviewChartData}
+          scoreDistribution={scoreDistribution}
+          employeeCount={analyticsEmployeeCount}
+          managerCount={analyticsManagerCount}
+          qoqDepartments={qoqDepartments}
+          qoqSeries={qoqSeries}
+          managerEffectiveness={managerEffectiveness}
+        />
       )}
       {active === "hierarchy" && (
         <OrgHierarchyForm employees={orgEmployees} managers={orgManagers} />

@@ -38,20 +38,44 @@ export default async function ManagerDashboard() {
     .filter((goal) => goal.status === "approved" || goal.status === "locked")
     .map((goal) => goal.id);
 
+  const { data: windows } = await supabase
+    .from("quarter_windows")
+    .select("quarter_name, start_date, end_date");
+
+  const activeWindow = getActiveWindow((windows ?? []) as QuarterWindow[]);
+  const activeQuarter = activeWindow?.quarter_name ?? null;
+
   const { data: teamUpdates } = teamGoalIds.length
     ? await supabase
         .from("quarterly_updates")
-        .select("goal_id, score, submitted_at")
+        .select("goal_id, quarter, score, submitted_at")
         .in("goal_id", teamGoalIds)
     : { data: [] };
 
-  const teamAvgScore = calculateWeightedOverallScore(
-    (goals ?? []).filter((goal) => goal.status === "approved" || goal.status === "locked"),
-    teamUpdates ?? []
+  const updatesList = teamUpdates ?? [];
+  const lockedGoals = (goals ?? []).filter(
+    (goal) => goal.status === "approved" || goal.status === "locked"
   );
+
+  const teamAvgScore = calculateWeightedOverallScore(lockedGoals, updatesList);
 
   const members: TeamMemberSummary[] = (team ?? []).map((member) => {
     const memberGoals = (goals ?? []).filter((goal) => goal.user_id === member.id);
+    const memberLocked = memberGoals.filter(
+      (goal) => goal.status === "approved" || goal.status === "locked"
+    );
+    const memberUpdates =
+      activeQuarter != null
+        ? updatesList.filter(
+            (row) =>
+              row.quarter === activeQuarter &&
+              memberLocked.some((goal) => goal.id === row.goal_id)
+          )
+        : [];
+    const quarterScore =
+      memberLocked.length > 0
+        ? calculateWeightedOverallScore(memberLocked, memberUpdates)
+        : null;
     const submittedCount = memberGoals.filter((goal) => goal.status === "submitted").length;
     const hasRejectedGoals = memberGoals.some((goal) => goal.status === "rejected");
     const hasSubmittedGoals = submittedCount > 0;
@@ -73,17 +97,11 @@ export default async function ManagerDashboard() {
           : hasRejectedGoals
             ? "rejected"
             : "not_submitted",
+      quarterScore,
     };
   });
 
-  const { data: windows } = await supabase
-    .from("quarter_windows")
-    .select("quarter_name, start_date, end_date");
-
-  const activeWindow = getActiveWindow((windows ?? []) as QuarterWindow[]);
-
   let checkinMembers: TeamCheckinMember[] | null = null;
-  const activeQuarter = activeWindow?.quarter_name ?? null;
 
   if (activeWindow && teamIds.length > 0) {
     const { data: approvedGoals } = await supabase

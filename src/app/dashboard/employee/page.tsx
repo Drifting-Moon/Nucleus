@@ -3,6 +3,7 @@ import type { CheckinUpdateRecord } from "@/components/checkins/checkin-form";
 import type { CheckinGoal } from "@/components/checkins/checkin-row";
 import { CheckinHistory, type CheckinHistoryRow } from "@/components/employee/checkin-history";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { EmployeeQoqMiniChart } from "@/components/employee/employee-qoq-mini-chart";
 import { GoalSummaryCards } from "@/components/employee/goal-summary-cards";
 import { WorkflowStepper } from "@/components/employee/workflow-stepper";
 import { GoalSheet } from "@/components/goals/goal-sheet";
@@ -10,6 +11,7 @@ import { QuickGuide } from "@/components/quick-guide";
 import { Separator } from "@/components/ui/separator";
 import { requireRole } from "@/lib/auth";
 import { calculateWeightedOverallScore } from "@/lib/calculate-weighted-score";
+import { buildEmployeeQoqTrend } from "@/lib/employee-qoq-trend";
 import { isQuarterSubmitted } from "@/lib/employee-workflow";
 import { getWorkflowGoals } from "@/lib/goal-metrics";
 import {
@@ -93,6 +95,7 @@ export default async function EmployeeDashboard() {
     });
 
   const overallScore = calculateWeightedOverallScore(scoreGoals, updatesList);
+  const qoqTrend = buildEmployeeQoqTrend(scoreGoals, updatesList);
 
   const quarterSubmitted = {
     q1: isQuarterSubmitted("q1", approvedGoalIds, updatesList, allGoalsList),
@@ -137,6 +140,7 @@ export default async function EmployeeDashboard() {
           updates={updatesList}
           overallScore={overallScore}
         />
+        {scoreGoals.length > 0 ? <EmployeeQoqMiniChart points={qoqTrend} /> : null}
       </div>
       <GoalSheet userId={user.id} goalSettingOpen={goalSettingOpen} />
       <Separator className="my-8" />

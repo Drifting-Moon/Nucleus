@@ -72,6 +72,14 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
+  --analytics-blue: oklch(0.55 0.19 250);
+  --analytics-purple: oklch(0.52 0.2 300);
+  --analytics-orange: oklch(0.65 0.18 55);
+  --analytics-green: oklch(0.52 0.17 145);
+  --analytics-yellow: oklch(0.75 0.14 85);
+  --analytics-red: oklch(0.55 0.22 25);
+  --analytics-amber: oklch(0.72 0.15 75);
+  --analytics-grey: oklch(0.72 0.02 0);
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -107,6 +115,14 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
+  --analytics-blue: oklch(0.68 0.16 250);
+  --analytics-purple: oklch(0.65 0.18 300);
+  --analytics-orange: oklch(0.72 0.16 55);
+  --analytics-green: oklch(0.68 0.15 145);
+  --analytics-yellow: oklch(0.78 0.12 85);
+  --analytics-red: oklch(0.65 0.2 25);
+  --analytics-amber: oklch(0.75 0.14 75);
+  --analytics-grey: oklch(0.45 0.02 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -127,6 +143,12 @@
   html {
     @apply font-sans transition-colors duration-200;
   }
+}
+
+/* Recharts: prevent tooltip sliding in from (0,0) on hover */
+.recharts-tooltip-wrapper {
+  transition: none !important;
+  pointer-events: none;
 }
 
 @media print {

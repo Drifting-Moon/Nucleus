@@ -26,6 +26,7 @@ export type TeamMemberSummary = {
   submittedCount: number;
   totalGoals: number;
   status: TeamMemberStatus;
+  quarterScore?: number | null;
 };
 
 type TeamOverviewProps = {
@@ -107,12 +108,12 @@ export function TeamOverview({ members, teamAvgScore = null }: TeamOverviewProps
           <CardContent className="text-3xl font-semibold">{approved}</CardContent>
         </Card>
         {teamAvgScore != null ? (
-          <Card className="border-primary/40 bg-primary/5 ring-1 ring-primary/20">
+          <Card className="border-[color-mix(in_oklch,var(--analytics-green)_40%,transparent)] bg-[color-mix(in_oklch,var(--analytics-green)_8%,transparent)]">
             <CardHeader>
-              <CardTitle className="text-primary">Team avg score</CardTitle>
+              <CardTitle className="text-[var(--analytics-green)]">Team avg score</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-semibold text-primary">{teamAvgScore}%</p>
+              <p className="text-3xl font-semibold text-[var(--analytics-green)]">{teamAvgScore}%</p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Weighted across submitted check-ins
               </p>
@@ -193,6 +194,25 @@ export function TeamOverview({ members, teamAvgScore = null }: TeamOverviewProps
                         {member.department || "No department"} · {member.submittedCount} submitted /{" "}
                         {member.totalGoals} total goals
                       </p>
+                      {member.quarterScore != null ? (
+                        <div className="mt-2 max-w-xs">
+                          <div className="mb-1 flex justify-between text-xs text-muted-foreground">
+                            <span>Quarter score</span>
+                            <span className="font-medium text-[var(--analytics-green)]">
+                              {member.quarterScore}%
+                            </span>
+                          </div>
+                          <div
+                            className="h-1.5 overflow-hidden rounded-full bg-muted"
+                            role="presentation"
+                          >
+                            <div
+                              className="h-full rounded-full bg-[var(--analytics-green)] transition-all"
+                              style={{ width: `${Math.min(member.quarterScore, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                   <span
