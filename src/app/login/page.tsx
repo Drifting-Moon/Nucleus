@@ -8,8 +8,12 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import dynamic from "next/dynamic";
+import friesData from "../../../public/fries.json";
 
-
+const Fries = dynamic(() => import("lottie-react"), { 
+  ssr: false,
+});
 
 const loginTypes = [
   { label: "Employee", email: "employee@test.com" },
@@ -118,8 +122,12 @@ export default function LoginPage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" className="flex items-center justify-center gap-2 w-full" disabled={loading}>
+              {loading && (
+                <div className="w-10 h-10">
+                  <Fries animationData={friesData} loop={true} />
+                </div>
+              )}
               {loading ? "Signing in..." : "Sign in"}
             </Button>
           </CardFooter>
