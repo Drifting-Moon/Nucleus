@@ -73,8 +73,8 @@ The platform comes pre-configured with three robust personas for hackathon judge
 
 | Role | Email | Password |
 |---|---|---|
-| **Employee** | `emp1@test.com` | `password123` |
-| **Manager** | `manager1@test.com` | `password123` |
+| **Employee** | `employee@test.com` | `password123` |
+| **Manager** | `manager@test.com` | `password123` |
 | **Admin** | `admin@test.com` | `password123` |
 
 *(Note: The login page includes quick-select buttons that can sign in with these demo credentials for rapid testing).*
