@@ -24,7 +24,7 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 | Stage 4 — Quarterly check-ins | Complete | Windows, employee check-ins, manager feedback                         |
 | Stage 5 — Admin governance    | Complete | Completion, export, unlock, audit, push shared goal                 |
 | Polish — UX & demo readiness  | Complete | Branding, avatars, print PDF, locked goal cards, sticky actions       |
-| Stage 6 — Submission polish   | In progress | Weighted scores, org hierarchy UI, check-in history, rich seed     |
+| Stage 6 — Submission polish   | Complete | Weighted scores, org hierarchy, check-in history, rich demo seed      |
 
 ## Requirements Coverage (Role × Capability)
 
@@ -307,5 +307,5 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 - **Feedback logs:** rejection reason + quarterly `manager_feedback` only; no unified comment timeline UI.
 - RLS remains permissive for hackathon/demo speed.
 - `goals.is_locked` column unused by app (legacy from schema); lock = `status` in (`approved`, `locked`).
-- Check-in history (view past quarters) not implemented.
 - Push shared goal skips employees who already have locked goals for the cycle.
+- Vercel live URL and architecture diagram still manual submission tasks.
