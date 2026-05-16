@@ -1,26 +1,13 @@
-"use client";
+import { DashboardShell } from "@/components/dashboard-shell";
+import { requireRole } from "@/lib/auth";
 
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase";
-import { Button } from "@/components/ui/button";
-
-export default function EmployeeDashboard() {
-  const router = useRouter();
-  const supabase = createClient();
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  };
+export default async function EmployeeDashboard() {
+  await requireRole("employee");
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Employee Dashboard</h1>
-        <Button variant="outline" onClick={handleLogout}>Log out</Button>
-      </div>
-      <p className="text-muted-foreground">Coming Soon — Goal Sheet will appear here in Stage 2.</p>
-    </div>
+    <DashboardShell
+      title="Employee Dashboard"
+      description="Coming Soon — Goal Sheet will appear here in Stage 2."
+    />
   );
 }
