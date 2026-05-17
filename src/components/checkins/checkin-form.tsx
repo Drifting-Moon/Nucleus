@@ -124,6 +124,40 @@ export function CheckinForm({ quarter, goals, updates }: CheckinFormProps) {
       }
     }
 
+    // After all writes succeed, trigger the sync check
+    try {
+      const syncPayload = goals.map((goal) => {
+        const row = rows.find((item) => item.goalId === goal.id);
+        const achievementValue = row?.achievement === "" ? null : Number(row?.achievement);
+        const score = calculateScore({
+          uom: goal.uom ?? "",
+          target: goal.target,
+          achievement: achievementValue,
+          targetDate: goal.target_date,
+          achievementDate: row?.achievementDate,
+          scoreDirection: goal.score_direction,
+        });
+
+        return {
+          goal_id: goal.id,
+          achievement: goal.uom === "timeline" ? null : achievementValue,
+          achievement_date: goal.uom === "timeline" ? row?.achievementDate : null,
+          status: row?.status,
+          score,
+          submitted_at: submittedAt,
+        };
+      });
+
+      await fetch("/api/checkin/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ updates: syncPayload, quarter }),
+      });
+    } catch (syncError) {
+      console.error("Failed to sync shared goals:", syncError);
+      // We don't block the UI for sync errors, the employee's own check-in succeeded.
+    }
+
     setReadOnly(true);
     toast.success("Check-in submitted. Your manager can now review your progress.");
     router.refresh();

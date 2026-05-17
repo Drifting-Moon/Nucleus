@@ -66,7 +66,7 @@ export default async function EmployeeDashboard() {
 
   const { data: checkinGoals } = await supabase
     .from("goals")
-    .select("id, title, uom, target, target_date, score_direction")
+    .select("id, title, uom, target, target_date, score_direction, is_shared, is_primary_owner")
     .eq("user_id", user.id)
     .in("status", ["approved", "locked"])
     .order("created_at", { ascending: true });

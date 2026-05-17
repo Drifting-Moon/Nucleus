@@ -20,6 +20,8 @@ export type CheckinGoal = {
   target: number | null;
   target_date: string | null;
   score_direction?: string | null;
+  is_shared?: boolean | null;
+  is_primary_owner?: boolean | null;
 };
 
 export type CheckinRowState = {
@@ -53,6 +55,9 @@ export function CheckinRow({ goal, row, readOnly, onChange }: CheckinRowProps) {
     scoreDirection: goal.score_direction,
   });
 
+  const isNonPrimaryShared = goal.is_shared && !goal.is_primary_owner;
+  const isEffectivelyReadOnly = readOnly || isNonPrimaryShared;
+
   return (
     <div className="grid gap-3 rounded-lg border p-4 md:grid-cols-2">
       <div className="space-y-1 md:col-span-2">
@@ -68,7 +73,7 @@ export function CheckinRow({ goal, row, readOnly, onChange }: CheckinRowProps) {
           <Input
             type="date"
             value={row.achievementDate}
-            disabled={readOnly}
+            disabled={isEffectivelyReadOnly}
             onChange={(e) => onChange({ achievementDate: e.target.value })}
           />
         ) : (
@@ -76,7 +81,7 @@ export function CheckinRow({ goal, row, readOnly, onChange }: CheckinRowProps) {
             type="number"
             min="0"
             value={row.achievement}
-            disabled={readOnly}
+            disabled={isEffectivelyReadOnly}
             placeholder={goal.uom === "zero_based" ? "0" : "Enter value"}
             onChange={(e) =>
               onChange({
@@ -84,6 +89,11 @@ export function CheckinRow({ goal, row, readOnly, onChange }: CheckinRowProps) {
               })
             }
           />
+        )}
+        {isNonPrimaryShared && (
+          <p className="mt-1 text-xs text-muted-foreground font-medium text-blue-600 dark:text-blue-400">
+            {row.status ? "Synced from team KPI owner" : "Pending — waiting for owner to submit"}
+          </p>
         )}
       </div>
 
@@ -94,7 +104,7 @@ export function CheckinRow({ goal, row, readOnly, onChange }: CheckinRowProps) {
           onValueChange={(value) =>
             onChange({ status: (value ?? "") as CheckinRowState["status"] })
           }
-          disabled={readOnly}
+          disabled={isEffectivelyReadOnly}
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select status" />

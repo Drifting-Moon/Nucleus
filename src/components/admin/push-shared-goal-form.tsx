@@ -57,6 +57,7 @@ export function PushSharedGoalForm({ adminId, employees }: PushSharedGoalFormPro
   const [scoreDirection, setScoreDirection] = useState<"higher" | "lower">("higher");
   const [saving, setSaving] = useState(false);
   const [filter, setFilter] = useState("");
+  const [primaryOwnerId, setPrimaryOwnerId] = useState<string>("");
 
   const eligibleEmployees = useMemo(
     () => employees.filter((employee) => !employee.hasLockedGoals),
@@ -92,6 +93,7 @@ export function PushSharedGoalForm({ adminId, employees }: PushSharedGoalFormPro
 
   const clearSelection = () => {
     setSelectedIds(new Set());
+    setPrimaryOwnerId("");
   };
 
   const validate = () => {
@@ -128,6 +130,14 @@ export function PushSharedGoalForm({ adminId, employees }: PushSharedGoalFormPro
 
     setSaving(true);
     const supabase = createClient();
+    const sharedGoalId = crypto.randomUUID();
+    
+    // Ensure we have a valid primary owner
+    const effectivePrimaryOwnerId = 
+      (primaryOwnerId && selectedIds.has(primaryOwnerId)) 
+        ? primaryOwnerId 
+        : [...selectedIds][0];
+
     const rows = [...selectedIds].map((userId) => ({
       user_id: userId,
       title: title.trim(),
@@ -140,6 +150,8 @@ export function PushSharedGoalForm({ adminId, employees }: PushSharedGoalFormPro
       is_shared: true,
       status: "draft" as const,
       score_direction: uom === "zero_based" ? "higher" : scoreDirection,
+      shared_goal_id: sharedGoalId,
+      is_primary_owner: userId === effectivePrimaryOwnerId,
     }));
 
     const { data, error } = await supabase.from("goals").insert(rows).select("id, user_id");
@@ -164,6 +176,7 @@ export function PushSharedGoalForm({ adminId, employees }: PushSharedGoalFormPro
 
     toast.success(`Shared goal assigned to ${data?.length ?? selectedIds.size} employee(s)`);
     setSelectedIds(new Set());
+    setPrimaryOwnerId("");
     setTitle("");
     setDescription("");
     setSaving(false);
@@ -298,6 +311,30 @@ export function PushSharedGoalForm({ adminId, employees }: PushSharedGoalFormPro
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
           />
+          {selectedIds.size > 0 && (
+            <div className="space-y-1.5 pt-2">
+              <label className="text-sm font-medium">Primary Owner (optional)</label>
+              <Select value={primaryOwnerId || null} onValueChange={setPrimaryOwnerId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select primary owner (defaults to first selected)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[...selectedIds].map((id) => {
+                    const emp = employees.find((e) => e.id === id);
+                    if (!emp) return null;
+                    return (
+                      <SelectItem key={id} value={id}>
+                        {emp.name} ({emp.email})
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                The primary owner's check-ins will automatically sync to all other assigned employees.
+              </p>
+            </div>
+          )}
           <div className="max-h-56 space-y-2 overflow-y-auto rounded-lg border p-3">
             {filteredEmployees.length === 0 ? (
               <p className="text-sm text-muted-foreground">

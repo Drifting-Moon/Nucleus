@@ -67,7 +67,15 @@ export function PeopleManagement({ people, managers }: PeopleManagementProps) {
       }),
     });
 
-    const result = await response.json();
+    let result;
+    try {
+      result = await response.json();
+    } catch (err) {
+      setSaving(false);
+      toast.error("An unexpected server error occurred. Check the console.");
+      return;
+    }
+
     setSaving(false);
 
     if (!response.ok) {

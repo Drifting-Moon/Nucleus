@@ -144,7 +144,7 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 - **Export:** CSV and Excel via `/api/admin/export`.
 - **Unlock & edit:** search employee, edit locked goal, save & re-lock; changes audit-logged.
 - **Audit log:** viewer for `audit_logs` (field-level unlock edits + shared goal assignments).
-- **Push shared goal:** multi-select employees, assign forced KPI (`is_shared = true`, draft).
+- **Push shared goal:** multi-select employees, assign forced KPI (`is_shared = true`, draft) with automatic check-in sync from designated Primary Owner.
 
 ### Polish Phase (UX)
 
@@ -199,9 +199,10 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 3. `supabase/migrations/202605160003_goals_updated_at.sql`
 4. `supabase/migrations/202605160004_goals_score_direction.sql`
 5. `supabase/migrations/202605170001_escalation_module.sql`
-6. Create Auth users: `employee@test.com`, `manager@test.com`, `admin@test.com` (Or run `supabase/seed/reset_to_core_demo_users.sql` / `supabase/seed/demo_org_15_employees.sql` in SQL Editor).
-7. Confirm `public.users` roles and employee `manager_id` → manager
-8. `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` (required for Admin People Management).
+6. `supabase/migrations/202605170002_shared_goals_sync.sql`
+7. Create Auth users: `employee@test.com`, `manager@test.com`, `admin@test.com` (Or run `supabase/seed/reset_to_core_demo_users.sql` / `supabase/seed/demo_org_15_employees.sql` in SQL Editor).
+8. Confirm `public.users` roles and employee `manager_id` → manager
+9. `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` (required for Admin People Management).
 
 ### Demo / test tips
 
@@ -320,6 +321,8 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 - `supabase/migrations/202605160003_goals_updated_at.sql`
 - `supabase/migrations/202605160004_goals_score_direction.sql`
 - `supabase/migrations/202605170001_escalation_module.sql`
+- `supabase/migrations/202605170002_shared_goals_sync.sql`
+
 
 ## Current Limitations
 
@@ -328,3 +331,4 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 - `goals.is_locked` column unused by app (legacy from schema); lock = `status` in (`approved`, `locked`).
 - Push shared goal skips employees who already have locked goals for the cycle.
 - Vercel live URL and architecture diagram still manual submission tasks.
+- **Shared Goal Sync:** If a non-primary employee's goals are from a different cycle than the primary (edge case from late pushes), sync for that quarter is silently skipped.
