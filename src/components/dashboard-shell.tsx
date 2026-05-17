@@ -117,9 +117,10 @@ export function DashboardShell({
           <div className="flex flex-wrap items-center gap-2">
             <Link
               href="/"
-              className="text-sm font-semibold tracking-tight text-primary hover:underline"
+              className="flex items-center gap-2 text-sm font-semibold tracking-tight text-primary hover:underline"
             >
-              Nucleus
+              <img src="/logo.svg.webp" alt="Nucleus Logo" className="h-5 w-5 object-contain" />
+              <span>Nucleus</span>
             </Link>
             {role ? <RoleBadge role={role} /> : null}
           </div>
