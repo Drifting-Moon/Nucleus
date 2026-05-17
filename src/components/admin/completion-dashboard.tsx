@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { StatusCell } from "@/components/admin/status-cell";
+import { CompletionHeatmap } from "@/components/admin/completion-heatmap";
 import { UserAvatar } from "@/components/user-avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,6 +57,8 @@ export function CompletionDashboard({ employees, managers }: CompletionDashboard
           </div>
         </div>
       ) : null}
+
+      <CompletionHeatmap employees={employees} />
 
       <Card>
         <CardHeader>

@@ -143,6 +143,20 @@ export default async function AdminDashboard() {
     allUpdates
   );
 
+  const submittedEmployees = employeeRows.filter(r => r.goalsSubmitted === "done").length;
+  const goalsSubmittedPercent = employees.length > 0 ? Math.round((submittedEmployees / employees.length) * 100) : 0;
+  const pendingApprovals = allGoals.filter(g => g.status === "submitted").length;
+  const validScores = allUpdates.map(u => u.score).filter((s): s is number => s !== null);
+  const avgOrgScore = validScores.length > 0 ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length) : 0;
+
+  const summaryStats = {
+    activeEmployees: employees.length,
+    goalsSubmittedPercent,
+    pendingApprovals,
+    escalations: escalationData.summary.totalOpen,
+    avgOrgScore,
+  };
+
   const userMap = new Map((users ?? []).map((u) => [u.id, u]));
   const goalMap = new Map(allGoals.map((g) => [g.id, g]));
 
@@ -270,6 +284,7 @@ export default async function AdminDashboard() {
         managerEffectiveness={managerEffectiveness}
         escalationData={escalationData}
         escalationInput={escalationInput}
+        summaryStats={summaryStats}
       />
     </DashboardShell>
   );

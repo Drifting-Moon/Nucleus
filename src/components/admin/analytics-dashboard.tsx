@@ -13,6 +13,7 @@ import type { ScoreBucket } from "@/lib/admin/score-distribution-data";
 import type { ManagerEffectivenessResult } from "@/lib/admin/manager-effectiveness-data";
 import type { QoqTrendSeries } from "@/lib/admin/qoq-chart-data";
 import type { DistributionSlice } from "@/lib/admin/goal-distribution";
+import { AnalyticsSummaryStrip, type AnalyticsSummaryStats } from "@/components/admin/analytics/analytics-summary-strip";
 
 export type AnalyticsDashboardProps = {
   byThrust: DistributionSlice[];
@@ -27,6 +28,7 @@ export type AnalyticsDashboardProps = {
   qoqDepartments: string[];
   qoqSeries: QoqTrendSeries;
   managerEffectiveness: ManagerEffectivenessResult;
+  summaryStats: AnalyticsSummaryStats;
 };
 
 export function AnalyticsDashboard({
@@ -42,6 +44,7 @@ export function AnalyticsDashboard({
   qoqDepartments,
   qoqSeries,
   managerEffectiveness,
+  summaryStats,
 }: AnalyticsDashboardProps) {
   return (
     <div className="space-y-8">
@@ -51,6 +54,7 @@ export function AnalyticsDashboard({
           Organization-wide insights from goals and check-ins.
         </p>
       </div>
+      <AnalyticsSummaryStrip stats={summaryStats} />
       <GoalDistributionCharts
         byThrust={byThrust}
         byUom={byUom}

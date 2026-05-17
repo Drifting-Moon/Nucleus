@@ -45,6 +45,7 @@ import type {
   EscalationEvaluationInput,
   EscalationResult,
 } from "@/lib/admin/escalation-data";
+import type { AnalyticsSummaryStats } from "@/components/admin/analytics/analytics-summary-strip";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -87,6 +88,7 @@ type AdminTabsProps = {
   managerEffectiveness: ManagerEffectivenessResult;
   escalationData: EscalationResult;
   escalationInput: EscalationEvaluationInput;
+  summaryStats: AnalyticsSummaryStats;
 };
 
 export function AdminTabs({
@@ -114,6 +116,7 @@ export function AdminTabs({
   managerEffectiveness,
   escalationData,
   escalationInput,
+  summaryStats,
 }: AdminTabsProps) {
   const [active, setActive] = useState<TabId>("completion");
 
@@ -160,6 +163,7 @@ export function AdminTabs({
           qoqDepartments={qoqDepartments}
           qoqSeries={qoqSeries}
           managerEffectiveness={managerEffectiveness}
+          summaryStats={summaryStats}
         />
       )}
       {active === "hierarchy" && (
