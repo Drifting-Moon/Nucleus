@@ -23,6 +23,7 @@ import { hasLockedGoals } from "@/lib/goal-metrics";
 import { getErrorMessage } from "@/lib/map-supabase-error";
 import { validateGoals } from "@/lib/validate-goals";
 import { formatDateTime } from "@/lib/format-datetime";
+import { computeGoalHealth, type GoalHealth } from "@/lib/goal-health";
 import { DashboardLoading } from "@/components/dashboard-loading";
 
 const LOCKED_STATUSES = ["approved", "locked"] as const;
@@ -173,6 +174,7 @@ export function GoalSheet({ userId, goalSettingOpen }: GoalSheetProps) {
   const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
+  const [goalHealthMap, setGoalHealthMap] = useState<Map<string, GoalHealth>>(new Map());
   const totalWeightage = goals.reduce((sum, goal) => sum + (Number(goal.weightage) || 0), 0);
   const canAddMore = goals.length < 8;
   const canSubmit =
@@ -324,6 +326,33 @@ export function GoalSheet({ userId, goalSettingOpen }: GoalSheetProps) {
       }
 
       setRejectionReason((profile as UserProfileRecord | null)?.rejection_reason ?? "");
+
+      // Compute goal health for locked goals
+      if (locked.length > 0) {
+        const lockedGoalIds = locked.map((g) => g.id).filter(Boolean) as string[];
+        if (lockedGoalIds.length > 0) {
+          const { data: updates } = await supabase
+            .from("quarterly_updates")
+            .select("goal_id, score, status, submitted_at")
+            .in("goal_id", lockedGoalIds)
+            .order("submitted_at", { ascending: false });
+
+          const healthMap = new Map<string, GoalHealth>();
+          for (const gId of lockedGoalIds) {
+            const latestUpdate = (updates ?? []).find((u) => u.goal_id === gId && u.submitted_at);
+            healthMap.set(
+              gId,
+              computeGoalHealth({
+                latestScore: latestUpdate?.score ?? null,
+                latestStatus: latestUpdate?.status ?? null,
+                hasSubmitted: Boolean(latestUpdate?.submitted_at),
+              })
+            );
+          }
+          if (!ignore) setGoalHealthMap(healthMap);
+        }
+      }
+
       setLoading(false);
     }
 
@@ -631,6 +660,7 @@ export function GoalSheet({ userId, goalSettingOpen }: GoalSheetProps) {
                   targetDate={goal.target_date}
                   weightage={goal.weightage}
                   description={goal.description}
+                  health={goal.id ? goalHealthMap.get(goal.id) : null}
                 />
               ))}
             </div>

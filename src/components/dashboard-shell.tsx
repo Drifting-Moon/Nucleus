@@ -9,6 +9,8 @@ import { createClient } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { RoleBadge, type UserRole } from "@/components/ui/role-badge";
+import { RoleSwitcher } from "@/components/role-switcher";
+import { CommandPaletteButton } from "@/components/command-palette";
 
 type DashboardShellProps = {
   title: string;
@@ -68,6 +70,8 @@ export function DashboardShell({
           <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <CommandPaletteButton />
+          <RoleSwitcher currentRole={role} />
           {showPrint ? <PrintDashboardButton /> : null}
           <ThemeToggle />
           <Button variant="outline" onClick={handleLogout}>

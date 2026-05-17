@@ -73,7 +73,7 @@ export function CheckinRow({ goal, row, readOnly, onChange }: CheckinRowProps) {
           <Input
             type="date"
             value={row.achievementDate}
-            disabled={isEffectivelyReadOnly}
+            disabled={Boolean(isEffectivelyReadOnly)}
             onChange={(e) => onChange({ achievementDate: e.target.value })}
           />
         ) : (
@@ -81,7 +81,7 @@ export function CheckinRow({ goal, row, readOnly, onChange }: CheckinRowProps) {
             type="number"
             min="0"
             value={row.achievement}
-            disabled={isEffectivelyReadOnly}
+            disabled={Boolean(isEffectivelyReadOnly)}
             placeholder={goal.uom === "zero_based" ? "0" : "Enter value"}
             onChange={(e) =>
               onChange({
@@ -104,7 +104,7 @@ export function CheckinRow({ goal, row, readOnly, onChange }: CheckinRowProps) {
           onValueChange={(value) =>
             onChange({ status: (value ?? "") as CheckinRowState["status"] })
           }
-          disabled={isEffectivelyReadOnly}
+          disabled={Boolean(isEffectivelyReadOnly)}
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select status" />

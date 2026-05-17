@@ -1,5 +1,7 @@
 import { Badge } from "@/components/ui/badge";
+import { GoalHealthBadge } from "@/components/goals/goal-health-badge";
 import { formatGoalTarget, formatUomLabel } from "@/lib/format-goal-target";
+import type { GoalHealth } from "@/lib/goal-health";
 import { cn } from "@/lib/utils";
 
 type LockedGoalCardProps = {
@@ -12,6 +14,7 @@ type LockedGoalCardProps = {
   targetDate: string;
   weightage: number | "";
   description?: string;
+  health?: GoalHealth | null;
   className?: string;
 };
 
@@ -25,6 +28,7 @@ export function LockedGoalCard({
   targetDate,
   weightage,
   description,
+  health,
   className,
 }: LockedGoalCardProps) {
   const targetDisplay = formatGoalTarget(uom, target, targetDate);
@@ -39,6 +43,7 @@ export function LockedGoalCard({
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-base font-semibold">{title || "Untitled goal"}</h3>
         <Badge variant="secondary">{statusLabel ?? status}</Badge>
+        {health ? <GoalHealthBadge health={health} /> : null}
       </div>
       <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
         <div>

@@ -314,7 +314,7 @@ export function PushSharedGoalForm({ adminId, employees }: PushSharedGoalFormPro
           {selectedIds.size > 0 && (
             <div className="space-y-1.5 pt-2">
               <label className="text-sm font-medium">Primary Owner (optional)</label>
-              <Select value={primaryOwnerId || null} onValueChange={setPrimaryOwnerId}>
+              <Select value={primaryOwnerId || undefined} onValueChange={(val) => setPrimaryOwnerId(val || "")}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select primary owner (defaults to first selected)" />
                 </SelectTrigger>
@@ -331,7 +331,7 @@ export function PushSharedGoalForm({ adminId, employees }: PushSharedGoalFormPro
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                The primary owner's check-ins will automatically sync to all other assigned employees.
+                The primary owner&apos;s check-ins will automatically sync to all other assigned employees.
               </p>
             </div>
           )}

@@ -1,8 +1,10 @@
 import { AdminTabs } from "@/components/admin/admin-tabs";
+import { ActivityFeed } from "@/components/activity-feed";
 import type { AuditLogEntry } from "@/components/admin/audit-log-viewer";
 import type { EmployeeWithLockedGoals } from "@/components/admin/unlock-tool";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { QuickGuide } from "@/components/quick-guide";
+import { buildActivityFeed } from "@/lib/admin/build-activity-feed";
 import {
   buildEmployeeCompletionRows,
   buildManagerCompletionRows,
@@ -201,6 +203,23 @@ export default async function AdminDashboard() {
     };
   });
 
+  // Build activity feed from audit logs
+  const userNameMap = new Map(
+    (users ?? []).map((u) => [u.id, u.name || u.email || "Unknown"])
+  );
+  const activityFeedEntries = buildActivityFeed(
+    (auditLogs ?? []).map((log) => ({
+      id: log.id,
+      changed_by: log.changed_by,
+      goal_id: log.goal_id,
+      field_changed: log.field_changed,
+      old_value: log.old_value,
+      new_value: log.new_value,
+      created_at: log.changed_at,
+    })),
+    userNameMap
+  );
+
   return (
     <DashboardShell
       role="admin"
@@ -208,6 +227,7 @@ export default async function AdminDashboard() {
       description="Governance, completion tracking, exports, and audit controls."
     >
       <QuickGuide role="Admin" steps={adminSteps} />
+      <ActivityFeed entries={activityFeedEntries} maxItems={10} />
       <AdminTabs
         adminId={user.id}
         windows={windows ?? []}
