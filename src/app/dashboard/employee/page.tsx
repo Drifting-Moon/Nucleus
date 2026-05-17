@@ -102,6 +102,34 @@ export default async function EmployeeDashboard() {
   const updatesList = allUpdates ?? [];
   const goalById = new Map(allGoalsList.map((goal) => [goal.id, goal]));
 
+  let anytimeFeedback: any[] = [];
+  let anytimeFeedbackTableMissing = false;
+
+  try {
+    const { data: rawAnytimeFeedback, error: anytimeError } = await supabase
+      .from("anytime_feedback")
+      .select("id, feedback_text, created_at, goal_id, goals(title)")
+      .eq("employee_id", user.id);
+
+    if (anytimeError) {
+      if (anytimeError.code === "42P01") {
+        anytimeFeedbackTableMissing = true;
+      } else {
+        console.error("Error fetching anytime feedback:", anytimeError);
+      }
+    } else {
+      anytimeFeedback = (rawAnytimeFeedback ?? []).map((item: any) => ({
+        id: item.id,
+        feedback_text: item.feedback_text,
+        created_at: item.created_at,
+        goal_id: item.goal_id,
+        goal_title: item.goals?.title || null,
+      }));
+    }
+  } catch (err) {
+    console.error("Unexpected error fetching anytime feedback:", err);
+  }
+
   const historyRows: CheckinHistoryRow[] = updatesList
     .filter((row) => row.submitted_at)
     .map((row) => {
@@ -148,7 +176,8 @@ export default async function EmployeeDashboard() {
       quarter: row.quarter,
       manager_feedback: row.manager_feedback ?? null,
       submitted_at: row.submitted_at,
-    }))
+    })),
+    anytimeFeedback
   );
 
   const defaultTab = getEmployeeDefaultTab({
@@ -210,6 +239,20 @@ export default async function EmployeeDashboard() {
             <p className="mt-0.5 text-muted-foreground">
               You have draft or submitted goals that are not shown while locked goals are active.
               Contact your administrator to resolve before check-ins.
+            </p>
+          </div>
+        </div>
+      ) : null}
+
+      {anytimeFeedbackTableMissing ? (
+        <div className="flex items-start gap-3 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-red-700" />
+          <div className="flex-1">
+            <p className="font-medium text-red-900 dark:text-red-200">
+              Database Migration Pending: Anytime Feedback
+            </p>
+            <p className="mt-0.5 text-muted-foreground">
+              Please apply the SQL migration `supabase/migrations/202605170003_continuous_feedback.sql` in your Supabase SQL Editor to fully enable anytime manager feedback.
             </p>
           </div>
         </div>

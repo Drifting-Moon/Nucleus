@@ -69,12 +69,14 @@ function buildScopeSeries(
       if (score != null) employeeScores.push(score);
     }
 
-    const avg =
+    let avg =
       employeeScores.length > 0
         ? Math.round(
             employeeScores.reduce((sum, value) => sum + value, 0) / employeeScores.length
           )
         : null;
+
+
 
     return {
       quarter,

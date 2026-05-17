@@ -6,10 +6,11 @@ import { formatDateTime } from "@/lib/format-datetime";
 
 export type FeedbackTimelineEntry = {
   id: string;
-  type: "rejection" | "checkin";
+  type: "rejection" | "checkin" | "anytime";
   quarter?: string;
   message: string;
   at?: string | null;
+  goalTitle?: string | null;
 };
 
 type FeedbackTimelineProps = {
@@ -29,7 +30,7 @@ export function FeedbackTimeline({ entries }: FeedbackTimelineProps) {
           Manager feedback
         </CardTitle>
         <CardDescription>
-          Rejection notes and quarterly comments from your manager.
+          Rejection notes, quarterly check-in reviews, and anytime feedback from your manager.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -43,10 +44,17 @@ export function FeedbackTimeline({ entries }: FeedbackTimelineProps) {
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {entry.type === "rejection"
                   ? "Goal rework"
-                  : entry.quarter
-                    ? (QUARTER_LABELS[entry.quarter as CheckinQuarter] ?? entry.quarter)
-                    : "Check-in"}
+                  : entry.type === "anytime"
+                    ? "Anytime Feedback"
+                    : entry.quarter
+                      ? (QUARTER_LABELS[entry.quarter as CheckinQuarter] ?? entry.quarter)
+                      : "Check-in"}
               </p>
+              {entry.goalTitle && (
+                <p className="mt-0.5 text-xs font-semibold text-primary">
+                  Linked Goal: {entry.goalTitle}
+                </p>
+              )}
               <p className="mt-1 text-sm leading-relaxed">{entry.message}</p>
               {entry.at ? (
                 <p className="mt-1 text-xs text-muted-foreground">{formatDateTime(entry.at)}</p>

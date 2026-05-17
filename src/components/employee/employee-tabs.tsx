@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export const EMPLOYEE_TABS = [
@@ -31,6 +31,17 @@ export function EmployeeTabs({
   tabBadges,
 }: EmployeeTabsProps) {
   const [active, setActive] = useState<EmployeeTabId>(defaultTab);
+
+  useEffect(() => {
+    const handleSwitch = (e: Event) => {
+      const customEvent = e as CustomEvent<EmployeeTabId>;
+      if (customEvent.detail && EMPLOYEE_TABS.some((t) => t.id === customEvent.detail)) {
+        setActive(customEvent.detail);
+      }
+    };
+    window.addEventListener("switch-tab", handleSwitch);
+    return () => window.removeEventListener("switch-tab", handleSwitch);
+  }, []);
 
   return (
     <div className="space-y-4">

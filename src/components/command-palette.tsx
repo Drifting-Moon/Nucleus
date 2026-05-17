@@ -1,17 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   BarChart3,
   Briefcase,
   Calendar,
   ClipboardCheck,
   FileText,
-  LayoutDashboard,
   Lock,
   Search,
-  Shield,
   Users,
   UserPlus,
   AlertTriangle,
@@ -21,8 +19,6 @@ import {
   Target,
   Command,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase";
-import { toast } from "sonner";
 
 type CommandItem = {
   id: string;
@@ -34,18 +30,11 @@ type CommandItem = {
   group: string;
 };
 
-const DEMO_ACCOUNTS = {
-  employee: { email: "employee@test.com", password: "password123" },
-  manager: { email: "manager@test.com", password: "password123" },
-  admin: { email: "admin@test.com", password: "password123" },
-};
-
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [query, _setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  // Wrap setQuery to also reset selection index (avoids useEffect)
   const setQuery = (q: string) => {
     _setQuery(q);
     setSelectedIndex(0);
@@ -53,198 +42,193 @@ export function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
-  const switchRole = useCallback(
-    async (role: keyof typeof DEMO_ACCOUNTS) => {
-      const supabase = createClient();
-      await supabase.auth.signOut();
-      const account = DEMO_ACCOUNTS[role];
-      const { error } = await supabase.auth.signInWithPassword({
-        email: account.email,
-        password: account.password,
-      });
-      if (error) {
-        toast.error(`Switch failed: ${error.message}`);
-        return;
-      }
-      toast.success(`Switched to ${role}`, { icon: "🔄" });
-      router.replace(`/dashboard/${role}`);
-      router.refresh();
-    },
-    [router]
-  );
+  // Detect current role based on URL path
+  const currentRole = useMemo(() => {
+    if (pathname?.startsWith("/dashboard/employee")) return "employee";
+    if (pathname?.startsWith("/dashboard/manager")) return "manager";
+    if (pathname?.startsWith("/dashboard/admin")) return "admin";
+    return null;
+  }, [pathname]);
 
-  const commands: CommandItem[] = useMemo(
-    () => [
-      // Navigation
-      {
-        id: "nav-employee",
-        label: "Employee Dashboard",
-        description: "View employee goal sheet & check-ins",
-        icon: Briefcase,
-        action: () => router.push("/dashboard/employee"),
-        keywords: ["employee", "goals", "my dashboard", "goal sheet"],
-        group: "Navigation",
-      },
-      {
-        id: "nav-manager",
-        label: "Manager Dashboard",
-        description: "Review team goals & quarterly feedback",
-        icon: Users,
-        action: () => router.push("/dashboard/manager"),
-        keywords: ["manager", "team", "review", "approve", "feedback"],
-        group: "Navigation",
-      },
-      {
-        id: "nav-admin",
-        label: "Admin Dashboard",
-        description: "Governance, analytics & organization settings",
-        icon: Shield,
-        action: () => router.push("/dashboard/admin"),
-        keywords: ["admin", "hr", "governance", "settings"],
-        group: "Navigation",
-      },
-      {
-        id: "nav-login",
-        label: "Login Page",
-        description: "Go to the login screen",
-        icon: LayoutDashboard,
-        action: () => router.push("/login"),
-        keywords: ["login", "sign in", "authenticate"],
-        group: "Navigation",
-      },
-      // Quick Actions
-      {
-        id: "switch-employee",
-        label: "Switch to Employee",
-        description: "Sign in as employee@test.com",
-        icon: Briefcase,
-        action: () => switchRole("employee"),
-        keywords: ["switch", "employee", "demo", "role"],
-        group: "Switch Role",
-      },
-      {
-        id: "switch-manager",
-        label: "Switch to Manager",
-        description: "Sign in as manager@test.com",
-        icon: Users,
-        action: () => switchRole("manager"),
-        keywords: ["switch", "manager", "demo", "role"],
-        group: "Switch Role",
-      },
-      {
-        id: "switch-admin",
-        label: "Switch to Admin",
-        description: "Sign in as admin@test.com",
-        icon: Shield,
-        action: () => switchRole("admin"),
-        keywords: ["switch", "admin", "demo", "role"],
-        group: "Switch Role",
-      },
-      // Admin Features
-      {
-        id: "admin-completion",
-        label: "Completion Dashboard",
-        description: "View goal completion across org",
-        icon: ClipboardCheck,
-        action: () => router.push("/dashboard/admin"),
-        keywords: ["completion", "status", "progress", "tracking"],
-        group: "Admin",
-      },
-      {
-        id: "admin-analytics",
-        label: "Analytics",
-        description: "Charts, scores & org performance",
-        icon: BarChart3,
-        action: () => router.push("/dashboard/admin"),
-        keywords: ["analytics", "charts", "performance", "scores", "data"],
-        group: "Admin",
-      },
-      {
-        id: "admin-people",
-        label: "People Management",
-        description: "Create & manage users",
-        icon: UserPlus,
-        action: () => router.push("/dashboard/admin"),
-        keywords: ["people", "users", "create", "manage", "employees"],
-        group: "Admin",
-      },
-      {
-        id: "admin-escalation",
-        label: "Escalation Center",
-        description: "View overdue & blocked employees",
-        icon: AlertTriangle,
-        action: () => router.push("/dashboard/admin"),
-        keywords: ["escalation", "overdue", "blocked", "alert"],
-        group: "Admin",
-      },
-      {
-        id: "admin-quarter",
-        label: "Quarter Windows",
-        description: "Configure goal-setting & check-in dates",
-        icon: Calendar,
-        action: () => router.push("/dashboard/admin"),
-        keywords: ["quarter", "window", "dates", "q1", "q2", "q3", "annual", "goal setting"],
-        group: "Admin",
-      },
-      {
-        id: "admin-export",
-        label: "Export Reports",
-        description: "Download CSV or Excel reports",
-        icon: Download,
-        action: () => router.push("/dashboard/admin"),
-        keywords: ["export", "csv", "excel", "download", "report"],
-        group: "Admin",
-      },
-      {
-        id: "admin-shared",
-        label: "Push Shared Goal",
-        description: "Assign a KPI to multiple employees",
-        icon: Target,
-        action: () => router.push("/dashboard/admin"),
-        keywords: ["push", "shared", "kpi", "goal", "assign"],
-        group: "Admin",
-      },
-      {
-        id: "admin-unlock",
-        label: "Unlock Goals",
-        description: "Unlock & edit locked employee goals",
-        icon: Lock,
-        action: () => router.push("/dashboard/admin"),
-        keywords: ["unlock", "edit", "locked", "goals"],
-        group: "Admin",
-      },
-      {
-        id: "admin-audit",
-        label: "Audit Log",
-        description: "View change history & governance trail",
-        icon: ScrollText,
-        action: () => router.push("/dashboard/admin"),
-        keywords: ["audit", "log", "history", "trail", "changes"],
-        group: "Admin",
-      },
-      {
-        id: "admin-org",
-        label: "Org Hierarchy",
-        description: "Assign managers to employees",
-        icon: GitBranch,
-        action: () => router.push("/dashboard/admin"),
-        keywords: ["org", "hierarchy", "manager", "assign", "structure"],
-        group: "Admin",
-      },
-      // Other
-      {
+  const dispatchTabChange = useCallback((tabId: string) => {
+    window.dispatchEvent(new CustomEvent("switch-tab", { detail: tabId }));
+  }, []);
+
+  const commands = useMemo((): CommandItem[] => {
+    const items: CommandItem[] = [];
+
+    if (currentRole === "employee") {
+      items.push(
+        {
+          id: "emp-overview",
+          label: "View Status Overview",
+          description: "See score trends and weighted goal progress metrics",
+          icon: Briefcase,
+          action: () => dispatchTabChange("overview"),
+          keywords: ["overview", "milestones", "metrics", "chart"],
+          group: "Dashboard Tabs",
+        },
+        {
+          id: "emp-goals",
+          label: "My Goal Sheet",
+          description: "Draft, edit, delete, or submit your goals for approval",
+          icon: Target,
+          action: () => dispatchTabChange("goals"),
+          keywords: ["goals", "sheet", "draft", "submit"],
+          group: "Dashboard Tabs",
+        },
+        {
+          id: "emp-checkins",
+          label: "Quarterly Check-ins",
+          description: "Log achievement and scores for active quarters",
+          icon: Calendar,
+          action: () => dispatchTabChange("checkins"),
+          keywords: ["check-in", "achievement", "quarters"],
+          group: "Dashboard Tabs",
+        },
+        {
+          id: "emp-history",
+          label: "Timeline & Feedback History",
+          description: "Read manager feedback notes and quarterly comments",
+          icon: ScrollText,
+          action: () => dispatchTabChange("history"),
+          keywords: ["history", "timeline", "feedback", "rework"],
+          group: "Dashboard Tabs",
+        }
+      );
+    } else if (currentRole === "manager") {
+      items.push(
+        {
+          id: "mgr-goals",
+          label: "Goal Review Queue",
+          description: "Approve, edit, or return direct report goal sheets for rework",
+          icon: ClipboardCheck,
+          action: () => dispatchTabChange("goals"),
+          keywords: ["review", "approve", "rework", "goals"],
+          group: "Dashboard Tabs",
+        },
+        {
+          id: "mgr-checkins",
+          label: "Quarterly Feedback & Heatmaps",
+          description: "Submit check-in feedback and review achievement pipelines",
+          icon: Users,
+          action: () => dispatchTabChange("checkins"),
+          keywords: ["check-in", "feedback", "quarter", "heatmap"],
+          group: "Dashboard Tabs",
+        }
+      );
+    } else if (currentRole === "admin") {
+      items.push(
+        {
+          id: "admin-completion",
+          label: "Completion Dashboard",
+          description: "Monitor check-in & goal cycle completion",
+          icon: ClipboardCheck,
+          action: () => dispatchTabChange("completion"),
+          keywords: ["completion", "progress", "tracking", "completion rates"],
+          group: "Dashboard Tabs",
+        },
+        {
+          id: "admin-people",
+          label: "People Management",
+          description: "Create, search, or edit system users",
+          icon: UserPlus,
+          action: () => dispatchTabChange("people"),
+          keywords: ["people", "users", "create", "manage", "employees"],
+          group: "Dashboard Tabs",
+        },
+        {
+          id: "admin-escalation",
+          label: "Escalation Bottlenecks Center",
+          description: "Identify overdue cycles & pending escalations",
+          icon: AlertTriangle,
+          action: () => dispatchTabChange("escalations"),
+          keywords: ["escalation", "overdue", "blocked", "alert"],
+          group: "Dashboard Tabs",
+        },
+        {
+          id: "admin-analytics",
+          label: "Analytics & KPI Performance",
+          description: "Organization performance distributions and statistics",
+          icon: BarChart3,
+          action: () => dispatchTabChange("analytics"),
+          keywords: ["analytics", "charts", "performance", "distribution"],
+          group: "Dashboard Tabs",
+        },
+        {
+          id: "admin-org",
+          label: "Org Hierarchy mapping",
+          description: "Configure employee to manager reporting lines",
+          icon: GitBranch,
+          action: () => dispatchTabChange("hierarchy"),
+          keywords: ["org", "hierarchy", "manager", "reporting line"],
+          group: "Dashboard Tabs",
+        },
+        {
+          id: "admin-quarter",
+          label: "Quarter Windows setup",
+          description: "Configure goal-setting and check-in window dates",
+          icon: Calendar,
+          action: () => dispatchTabChange("windows"),
+          keywords: ["quarter", "window", "dates", "goal setting"],
+          group: "Dashboard Tabs",
+        },
+        {
+          id: "admin-export",
+          label: "Export CSV/Excel Reports",
+          description: "Download bulk organization goals & actuals data",
+          icon: Download,
+          action: () => dispatchTabChange("export"),
+          keywords: ["export", "csv", "excel", "download"],
+          group: "Dashboard Tabs",
+        },
+        {
+          id: "admin-shared",
+          label: "Push Shared KPI Goal",
+          description: "Assign a standard forced KPI to employees in bulk",
+          icon: Target,
+          action: () => dispatchTabChange("shared"),
+          keywords: ["push", "shared", "kpi", "bulk", "force"],
+          group: "Dashboard Tabs",
+        },
+        {
+          id: "admin-audit",
+          label: "Audit Logs viewer",
+          description: "Track all security & administrative goal overrides",
+          icon: ScrollText,
+          action: () => dispatchTabChange("audit"),
+          keywords: ["audit", "log", "governance", "trail"],
+          group: "Dashboard Tabs",
+        },
+        {
+          id: "admin-unlock",
+          label: "Unlock Goals Tool",
+          description: "Allow employees to rewrite approved/locked goal sheets",
+          icon: Lock,
+          action: () => dispatchTabChange("unlock"),
+          keywords: ["unlock", "locked", "edit goals"],
+          group: "Dashboard Tabs",
+        }
+      );
+    }
+
+    // Common Actions (Always available inside any dashboard)
+    if (currentRole) {
+      items.push({
         id: "print-pdf",
-        label: "Export as PDF",
-        description: "Print current page",
+        label: "Export Page as PDF",
+        description: "Save or print the current active view",
         icon: FileText,
         action: () => window.print(),
         keywords: ["print", "pdf", "export", "save"],
-        group: "Actions",
-      },
-    ],
-    [router, switchRole]
-  );
+        group: "System Actions",
+      });
+    }
+
+    return items;
+  }, [currentRole, dispatchTabChange]);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return commands;
@@ -267,14 +251,12 @@ export function CommandPalette() {
     return map;
   }, [filtered]);
 
-  // Keyboard shortcut to open
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setOpen((prev) => {
           if (!prev) {
-            // Reset query when opening — no effect needed
             _setQuery("");
             setSelectedIndex(0);
             setTimeout(() => inputRef.current?.focus(), 50);
@@ -290,7 +272,6 @@ export function CommandPalette() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -308,7 +289,6 @@ export function CommandPalette() {
     }
   };
 
-  // Scroll selected item into view
   useEffect(() => {
     const list = listRef.current;
     if (!list) return;
@@ -316,29 +296,26 @@ export function CommandPalette() {
     items[selectedIndex]?.scrollIntoView({ block: "nearest" });
   }, [selectedIndex]);
 
-  if (!open) return null;
+  if (!open || !currentRole) return null;
 
   let flatIndex = 0;
 
   return (
     <div className="fixed inset-0 z-[200] flex items-start justify-center pt-[15vh]">
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-150"
         onClick={() => setOpen(false)}
       />
 
-      {/* Palette */}
       <div className="relative w-full max-w-lg animate-in fade-in slide-in-from-top-4 duration-200">
         <div className="overflow-hidden rounded-2xl border bg-popover shadow-2xl shadow-black/20">
-          {/* Search input */}
           <div className="flex items-center gap-3 border-b px-4 py-3">
             <Search className="size-5 shrink-0 text-muted-foreground" />
             <input
               ref={inputRef}
               type="text"
               className="flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground/60"
-              placeholder="Search commands, pages, or actions…"
+              placeholder={`Search ${currentRole} dashboard actions…`}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -348,7 +325,6 @@ export function CommandPalette() {
             </kbd>
           </div>
 
-          {/* Results */}
           <div ref={listRef} className="max-h-80 overflow-y-auto p-2">
             {filtered.length === 0 ? (
               <div className="px-4 py-8 text-center text-sm text-muted-foreground">
@@ -406,7 +382,6 @@ export function CommandPalette() {
             )}
           </div>
 
-          {/* Footer */}
           <div className="flex items-center justify-between border-t px-4 py-2 text-[11px] text-muted-foreground">
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1">
@@ -427,13 +402,24 @@ export function CommandPalette() {
   );
 }
 
-/** Small button to trigger the palette from the header. */
 export function CommandPaletteButton() {
+  const pathname = usePathname();
+  const currentRole = pathname?.startsWith("/dashboard/employee")
+    ? "employee"
+    : pathname?.startsWith("/dashboard/manager")
+      ? "manager"
+      : pathname?.startsWith("/dashboard/admin")
+        ? "admin"
+        : null;
+
   const handleClick = () => {
+    if (!currentRole) return;
     window.dispatchEvent(
       new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true })
     );
   };
+
+  if (!currentRole) return null;
 
   return (
     <button

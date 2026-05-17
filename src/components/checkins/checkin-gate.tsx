@@ -26,17 +26,17 @@ export function CheckinGate({ windows, goals, updates, blockedReason }: CheckinG
         <CardContent className="rounded-lg border border-dashed p-6 text-center">
           {nextWindow ? (
             <>
-              <p className="font-medium">Check-ins are closed for now</p>
+              <p className="font-medium text-amber-700 dark:text-amber-300">Check-in window is not currently open</p>
               <p className="mt-2 text-sm text-muted-foreground">
-                {QUARTER_LABELS[nextWindow.quarter_name]} opens on{" "}
-                {formatDisplayDate(nextWindow.start_date)}.
+                {QUARTER_LABELS[nextWindow.quarter_name]} is scheduled to open on{" "}
+                {formatDisplayDate(nextWindow.start_date)}. Go to <strong>Quarter Windows</strong> in the Admin panel and set active dates including today if you want to force-open it.
               </p>
             </>
           ) : (
             <>
-              <p className="font-medium">No check-in windows configured</p>
+              <p className="font-medium text-destructive">No check-in windows configured</p>
               <p className="mt-2 text-sm text-muted-foreground">
-                Ask your admin to set quarter dates in the Admin dashboard.
+                Check-in window is not open. Go to <strong>Quarter Windows</strong> in the Admin dashboard and set dates for Q1, Q2, Q3, or Annual so today falls within the active range.
               </p>
             </>
           )}

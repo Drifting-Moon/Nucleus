@@ -43,18 +43,25 @@ export function OrgHierarchyForm({ employees, managers }: OrgHierarchyFormProps)
 
   const assignManager = async (employeeId: string, managerId: string | null) => {
     setSavingId(employeeId);
-    const supabase = createClient();
 
-    const { error } = await supabase
-      .from("users")
-      .update({ manager_id: managerId })
-      .eq("id", employeeId)
-      .eq("role", "employee");
+    const response = await fetch("/api/admin/users/assign-manager", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ employeeId, managerId }),
+    });
 
     setSavingId(null);
 
-    if (error) {
-      toast.error(error.message);
+    let result;
+    try {
+      result = await response.json();
+    } catch {
+      toast.error("Failed to parse response");
+      return;
+    }
+
+    if (!response.ok) {
+      toast.error(result.error ?? "Failed to update manager");
       return;
     }
 

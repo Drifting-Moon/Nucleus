@@ -28,10 +28,6 @@ export function getEmployeeDefaultTab(options: {
     return "goals";
   }
 
-  if (options.feedbackCount > 0 && options.allGoalsLocked) {
-    return "history";
-  }
-
   return "overview";
 }
 

@@ -161,18 +161,18 @@ export function TeamOverview({ members, teamAvgScore = null }: TeamOverviewProps
           </div>
 
           {members.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-              No employees are currently assigned to you.
+            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground bg-muted/20">
+              No employees are currently assigned to you. Instruct the Admin to go to the <strong>Org Hierarchy</strong> tab and assign employees to your roster.
             </div>
           ) : filtered.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground bg-muted/20">
               No team members match your filters.
             </div>
           ) : (
             <div className="space-y-3">
               {nothingToReview ? (
-                <p className="rounded-lg border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-                  Nothing to review right now. Check back when your team submits their goal sheets.
+                <p className="rounded-lg border border-dashed bg-amber-500/5 border-amber-500/20 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+                  No goals pending review. Your team members need to submit their goal sheets before they appear here for your approval.
                 </p>
               ) : null}
               {filtered.map((member) => (

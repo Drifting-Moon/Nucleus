@@ -25,7 +25,16 @@ export function WorkflowStepper({ goals, quarterSubmitted }: WorkflowStepperProp
       <CardContent>
         <ol className="flex flex-wrap items-center gap-1 text-xs sm:text-sm">
           {WORKFLOW_STEPS.map((step, index) => {
-            const isComplete = allComplete || index < currentIndex;
+            let isComplete = false;
+            if (step.id === "draft") {
+              isComplete = goals.length > 0;
+            } else if (step.id === "submitted") {
+              isComplete = goals.length > 0 && goals.some((g) => g.status === "submitted" || g.status === "approved" || g.status === "locked");
+            } else if (step.id === "approved") {
+              isComplete = goals.length > 0 && goals.every((g) => g.status === "approved" || g.status === "locked");
+            } else {
+              isComplete = Boolean(quarterSubmitted[step.id as CheckinQuarter]);
+            }
             const isCurrent = !allComplete && index === currentIndex;
 
             return (

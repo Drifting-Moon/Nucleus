@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { TeamMemberSummary } from "@/components/manager/team-overview";
 import { TeamOverview } from "@/components/manager/team-overview";
 import { TeamCheckinOverview } from "@/components/manager/team-checkin-overview";
@@ -50,6 +50,17 @@ export function ManagerTabs({
 }: ManagerTabsProps) {
   const [active, setActive] = useState<TabId>("goals");
 
+  useEffect(() => {
+    const handleSwitch = (e: Event) => {
+      const customEvent = e as CustomEvent<TabId>;
+      if (customEvent.detail && TABS.some((t) => t.id === customEvent.detail)) {
+        setActive(customEvent.detail);
+      }
+    };
+    window.addEventListener("switch-tab", handleSwitch);
+    return () => window.removeEventListener("switch-tab", handleSwitch);
+  }, []);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-1 border-b pb-2">
@@ -68,6 +79,13 @@ export function ManagerTabs({
             {tab.label}
           </button>
         ))}
+      </div>
+
+      <div className="border-b pb-3 pt-1">
+        <p className="text-sm text-muted-foreground font-light tracking-wide">
+          {active === "goals" && "Review submitted goal sheets, track employee goals statuses, and clear approval backlogs."}
+          {active === "checkins" && "Submit and manage quarterly progress check-in ratings and constructive feedback comments."}
+        </p>
       </div>
 
       {active === "goals" && (

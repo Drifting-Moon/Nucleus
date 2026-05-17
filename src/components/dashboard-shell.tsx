@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
 import { PrintDashboardButton } from "@/components/print-dashboard-button";
@@ -32,6 +32,7 @@ export function DashboardShell({
   children,
 }: DashboardShellProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const supabase = createClient();
 
   const handleLogout = async () => {
@@ -40,8 +41,64 @@ export function DashboardShell({
     router.refresh();
   };
 
+  const getBreadcrumbs = () => {
+    if (!pathname) return null;
+    const parts = pathname.split("/").filter(Boolean);
+    if (parts.length === 0) return null;
+
+    const crumbs: { label: string; href?: string }[] = [
+      { label: "Nucleus", href: "/" }
+    ];
+
+    if (parts[1] === "admin") {
+      crumbs.push({ label: "Admin", href: "/dashboard/admin" });
+      crumbs.push({ label: "Console" });
+    } else if (parts[1] === "manager") {
+      crumbs.push({ label: "Manager", href: "/dashboard/manager" });
+      if (parts[2] === "review") {
+        crumbs.push({ label: "Team", href: "/dashboard/manager" });
+        crumbs.push({ label: "Goal Review" });
+      } else if (parts[2] === "checkin") {
+        crumbs.push({ label: "Team", href: "/dashboard/manager" });
+        crumbs.push({ label: "Quarterly Feedback" });
+      } else {
+        crumbs.push({ label: "Team Overview" });
+      }
+    } else if (parts[1] === "employee") {
+      crumbs.push({ label: "Employee", href: "/dashboard/employee" });
+      crumbs.push({ label: "Goal Sheet" });
+    }
+
+    return crumbs;
+  };
+
+  const crumbs = getBreadcrumbs();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/40 p-6 md:p-8 print:bg-white print:p-4">
+      {crumbs && crumbs.length > 0 && (
+        <nav className="mb-4 flex items-center space-x-1.5 text-xs text-muted-foreground print:hidden">
+          {crumbs.map((crumb, idx) => {
+            const isLast = idx === crumbs.length - 1;
+            return (
+              <span key={idx} className="flex items-center space-x-1.5">
+                {idx > 0 && <span className="text-muted-foreground/30">/</span>}
+                {crumb.href && !isLast ? (
+                  <Link
+                    href={crumb.href}
+                    className="font-medium hover:text-foreground transition-colors"
+                  >
+                    {crumb.label}
+                  </Link>
+                ) : (
+                  <span className="font-semibold text-foreground/80">{crumb.label}</span>
+                )}
+              </span>
+            );
+          })}
+        </nav>
+      )}
+
       {backHref ? (
         <Button
           variant="ghost"

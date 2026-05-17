@@ -1,9 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, CheckCircle2, Clock, AlertTriangle, TrendingUp } from "lucide-react";
+import { Clock, TrendingUp, CheckSquare } from "lucide-react";
 
 export type AnalyticsSummaryStats = {
   activeEmployees: number;
   goalsSubmittedPercent: number;
+  checkinsSubmittedPercent: number;
   pendingApprovals: number;
   escalations: number;
   avgOrgScore: number;
@@ -16,18 +17,20 @@ type Props = {
 export function AnalyticsSummaryStrip({ stats }: Props) {
   const items = [
     {
-      label: "Active Employees",
-      value: stats.activeEmployees.toString(),
-      icon: Users,
-      color: "text-blue-600 dark:text-blue-400",
-      bg: "bg-blue-500/10",
+      label: "Org Avg Score",
+      value: `${stats.avgOrgScore}%`,
+      icon: TrendingUp,
+      color: "text-violet-600 dark:text-violet-400",
+      bg: "bg-violet-500/10",
+      desc: "Mean of weighted goal scores",
     },
     {
-      label: "Goals Submitted",
-      value: `${stats.goalsSubmittedPercent}%`,
-      icon: CheckCircle2,
+      label: "Check-ins Submitted",
+      value: `${stats.checkinsSubmittedPercent}%`,
+      icon: CheckSquare,
       color: "text-emerald-600 dark:text-emerald-400",
       bg: "bg-emerald-500/10",
+      desc: "Submitted check-ins for active cycle",
     },
     {
       label: "Pending Approvals",
@@ -35,36 +38,24 @@ export function AnalyticsSummaryStrip({ stats }: Props) {
       icon: Clock,
       color: "text-amber-600 dark:text-amber-400",
       bg: "bg-amber-500/10",
-    },
-    {
-      label: "Escalations",
-      value: stats.escalations.toString(),
-      icon: AlertTriangle,
-      color: "text-red-600 dark:text-red-400",
-      bg: "bg-red-500/10",
-    },
-    {
-      label: "Avg Org Score",
-      value: `${stats.avgOrgScore}%`,
-      icon: TrendingUp,
-      color: "text-violet-600 dark:text-violet-400",
-      bg: "bg-violet-500/10",
+      desc: "Goal sheets awaiting manager review",
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
       {items.map((item) => {
         const Icon = item.icon;
         return (
-          <Card key={item.label} className="border-0 bg-card shadow-sm ring-1 ring-border/50 transition-all hover:shadow-md">
-            <CardContent className="flex items-center gap-4 p-4">
-              <div className={`flex size-10 items-center justify-center rounded-full ${item.bg} ${item.color}`}>
-                <Icon className="size-5" />
+          <Card key={item.label} className="border bg-card shadow-sm transition-all hover:shadow-md">
+            <CardContent className="flex items-center gap-4 p-6">
+              <div className={`flex size-12 items-center justify-center rounded-xl ${item.bg} ${item.color}`}>
+                <Icon className="size-6" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">{item.label}</p>
-                <p className="text-2xl font-bold">{item.value}</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{item.label}</p>
+                <p className="mt-1 text-3xl font-extrabold tracking-tight">{item.value}</p>
+                <p className="text-xs text-muted-foreground/80 mt-0.5">{item.desc}</p>
               </div>
             </CardContent>
           </Card>

@@ -149,9 +149,15 @@ export default async function AdminDashboard() {
   const validScores = allUpdates.map(u => u.score).filter((s): s is number => s !== null);
   const avgOrgScore = validScores.length > 0 ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length) : 0;
 
+  // Q1 Check-ins submitted rate among employees with approved goals
+  const employeesWithGoals = employeeRows.filter(r => r.goalsApproved === "done");
+  const checkinsSubmittedCount = employeesWithGoals.filter(r => r.q1 === "done").length;
+  const checkinsSubmittedPercent = employeesWithGoals.length > 0 ? Math.round((checkinsSubmittedCount / employeesWithGoals.length) * 100) : 0;
+
   const summaryStats = {
     activeEmployees: employees.length,
     goalsSubmittedPercent,
+    checkinsSubmittedPercent,
     pendingApprovals,
     escalations: escalationData.summary.totalOpen,
     avgOrgScore,
@@ -285,6 +291,9 @@ export default async function AdminDashboard() {
         escalationData={escalationData}
         escalationInput={escalationInput}
         summaryStats={summaryStats}
+        rawGoals={allGoals}
+        rawUpdates={allUpdates}
+        rawWindows={windows ?? []}
       />
     </DashboardShell>
   );

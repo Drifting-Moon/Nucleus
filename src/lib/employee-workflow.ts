@@ -49,21 +49,15 @@ export function getWorkflowCurrentIndex(
     (status) => status === "approved" || status === "locked"
   );
 
-  if (allDraft) return 0;
-  if (anyRejected) return 0;
+  if (allDraft || anyRejected) return 0;
   if (anySubmitted || !allApproved) return 1;
-  if (!allApproved) return 1;
 
-  const latestSubmittedIndex = CHECKIN_ORDER.reduce(
-    (latest, quarter, index) => (quarterSubmitted[quarter] ? index : latest),
-    -1
-  );
+  if (!quarterSubmitted.q1) return 3;
+  if (!quarterSubmitted.q2) return 4;
+  if (!quarterSubmitted.q3) return 5;
+  if (!quarterSubmitted.annual) return 6;
 
-  if (latestSubmittedIndex >= 0) {
-    return Math.min(2 + latestSubmittedIndex + 1, WORKFLOW_STEPS.length - 1);
-  }
-
-  return 2;
+  return 6;
 }
 
 export function isWorkflowComplete(

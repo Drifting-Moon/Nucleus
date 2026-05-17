@@ -130,6 +130,9 @@ export function GoalFormRow({
             ))}
           </SelectContent>
         </Select>
+        <span className="block text-[10px] text-muted-foreground/80 leading-tight">
+          Percentage = 0–100% progress. Timeline = due date.
+        </span>
       </div>
 
       <div className="space-y-1.5">
@@ -148,6 +151,9 @@ export function GoalFormRow({
               : updateGoal({ target: parseNumber(event.target.value), target_date: "" })
           }
         />
+        <span className="block text-[10px] text-muted-foreground/80 leading-tight">
+          Target value to hit.
+        </span>
       </div>
 
       <div className="space-y-1.5">
@@ -161,6 +167,9 @@ export function GoalFormRow({
           value={goal.weightage}
           onChange={(event) => updateGoal({ weightage: event.target.value === "" ? "" : Number(event.target.value) })}
         />
+        <span className="block text-[10px] text-muted-foreground/80 leading-tight">
+          Min 10%. Combined total must equal 100%.
+        </span>
       </div>
 
       <Button

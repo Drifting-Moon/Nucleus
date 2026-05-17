@@ -681,26 +681,28 @@ export function GoalSheet({ userId, goalSettingOpen }: GoalSheetProps) {
           ) : null}
 
           {goals.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-8 text-center">
-              <p className="font-medium">
+            <div className="rounded-lg border border-dashed p-8 text-center bg-muted/20">
+              <p className="font-medium text-amber-700 dark:text-amber-300">
                 {goalSettingOpen
-                  ? "You haven't created goals yet"
-                  : "No goals on file"}
+                  ? "Your goal sheet is currently empty"
+                  : "No goals on file for this cycle"}
               </p>
               <p className="mt-2 text-sm text-muted-foreground">
                 {goalSettingOpen
-                  ? 'Start by clicking "Add Goal" below. Each goal needs at least 10% weightage and your total must equal 100%.'
-                  : "The goal-setting window is closed. Contact your administrator if you need access."}
+                  ? 'Start building your sheet by clicking "Add Goal" below. Each goal needs at least 10% weightage, and the combined weightage across all goals must equal exactly 100% to submit.'
+                  : "No employees have submitted goals this cycle. Share the goal-setting window dates with your team or check that they have been configured in Quarter Windows."}
               </p>
             </div>
           ) : null}
 
         </CardContent>
         {!isReadOnly ? (
-          <div className="sticky bottom-0 z-10 flex flex-col gap-3 border-t bg-background/90 px-6 py-4 backdrop-blur-md print:hidden sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">
-              {goals.length} / 8 goals added
-            </p>
+          <div className="sticky bottom-0 z-10 flex flex-col gap-3 border-t bg-background/95 px-6 py-4 backdrop-blur-md print:hidden sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex flex-wrap gap-x-3 divide-x divide-border">
+              <span>{goals.length} of 8 goals added</span>
+              <span className="pl-3">{totalWeightage}% weightage used</span>
+              <span className="pl-3">{Math.max(0, 100 - totalWeightage)}% remaining</span>
+            </div>
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" onClick={addGoal} disabled={!canAddMore || saving || submitting}>
                 <Plus />

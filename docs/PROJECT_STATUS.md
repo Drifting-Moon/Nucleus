@@ -25,6 +25,7 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 | Stage 5 — Admin governance    | Complete | Completion, export, unlock, audit, push shared goal                 |
 | Polish — UX & demo readiness  | Complete | Branding, avatars, print PDF, locked goal cards, sticky actions       |
 | Stage 6 — Submission polish   | Complete | Weighted scores, org hierarchy, check-in history, rich demo seed      |
+| Enterprise Features (Hackathon) | Complete | Role switcher, ⌘K command palette, goal health, activity feed, anytime feedback, heatmap |
 
 ## Requirements Coverage (Role × Capability)
 
@@ -185,8 +186,11 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 | `202605160002_stage4_quarterly.sql` | `achievement_date`, `score`, `submitted_at` on `quarterly_updates` |
 | `202605160003_goals_updated_at.sql` | `goals.updated_at` + trigger |
 | `202605160004_goals_score_direction.sql` | `goals.score_direction` (`higher` \| `lower`) |
+| `202605170001_escalation_module.sql` | Rule-based escalation module |
+| `202605170002_shared_goals_sync.sql` | Force shared goals synchronization |
+| `202605170003_continuous_feedback.sql` | Anytime feedback timeline module |
 
-**Tables:** `users`, `goals`, `quarterly_updates`, `quarter_windows`, `audit_logs`
+**Tables:** `users`, `goals`, `quarterly_updates`, `quarter_windows`, `audit_logs`, `anytime_feedback`
 
 **Note:** `goals.is_locked` column exists from Stage 1 but the app relies on `status` (`approved` / `locked`) for lock semantics.
 
@@ -200,9 +204,10 @@ The app is a Next.js 16 project using Supabase Auth and Supabase Postgres.
 4. `supabase/migrations/202605160004_goals_score_direction.sql`
 5. `supabase/migrations/202605170001_escalation_module.sql`
 6. `supabase/migrations/202605170002_shared_goals_sync.sql`
-7. Create Auth users: `employee@test.com`, `manager@test.com`, `admin@test.com` (Or run `supabase/seed/reset_to_core_demo_users.sql` / `supabase/seed/demo_org_15_employees.sql` in SQL Editor).
-8. Confirm `public.users` roles and employee `manager_id` → manager
-9. `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` (required for Admin People Management).
+7. `supabase/migrations/202605170003_continuous_feedback.sql`
+8. Create Auth users: `employee@test.com`, `manager@test.com`, `admin@test.com` (Or run `supabase/seed/reset_to_core_demo_users.sql` / `supabase/seed/demo_org_15_employees.sql` in SQL Editor).
+9. Confirm `public.users` roles and employee `manager_id` → manager
+10. `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` (required for Admin People Management).
 
 ### Demo / test tips
 

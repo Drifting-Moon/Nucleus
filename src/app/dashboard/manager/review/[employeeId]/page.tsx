@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { EmployeeGoalReview, ReviewGoal } from "@/components/manager/employee-goal-review";
+import { AnytimeFeedbackForm } from "@/components/manager/anytime-feedback-form";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase-server";
 
@@ -34,6 +35,13 @@ export default async function ManagerEmployeeReviewPage({
   const submittedGoals = allGoals.filter((goal) => goal.status === "submitted");
   const otherGoalsCount = allGoals.length - submittedGoals.length;
 
+  const approvedGoals = allGoals
+    .filter((goal) => goal.status === "approved" || goal.status === "locked")
+    .map((goal) => ({
+      id: goal.id,
+      title: goal.title,
+    }));
+
   return (
     <DashboardShell
       title="Employee Goal Review"
@@ -41,11 +49,18 @@ export default async function ManagerEmployeeReviewPage({
       backHref="/dashboard/manager"
       backLabel="Back to team"
     >
-      <EmployeeGoalReview
-        employee={employee}
-        goals={submittedGoals}
-        otherGoalsCount={otherGoalsCount}
-      />
+      <div className="space-y-6">
+        <EmployeeGoalReview
+          employee={employee}
+          goals={submittedGoals}
+          otherGoalsCount={otherGoalsCount}
+        />
+        <AnytimeFeedbackForm
+          employeeId={employee.id}
+          managerId={user.id}
+          goals={approvedGoals}
+        />
+      </div>
     </DashboardShell>
   );
 }
