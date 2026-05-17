@@ -91,7 +91,7 @@ export function EmployeeQoqMiniChart({ points }: EmployeeQoqMiniChartProps) {
                 strokeWidth={3}
                 dot={{ fill: LINE_STROKE, stroke: "var(--background)", strokeWidth: 2, r: 4 }}
                 activeDot={{ r: 6 }}
-                connectNulls
+                connectNulls={false}
               />
             </LineChart>
           </ResponsiveContainer>

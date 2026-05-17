@@ -7,6 +7,7 @@ import { FeedbackTimeline } from "@/components/employee/feedback-timeline";
 import { HistoryEmptyState } from "@/components/employee/history-empty-state";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { EmployeeQoqMiniChart } from "@/components/employee/employee-qoq-mini-chart";
+import { EmployeeThrustDistribution } from "@/components/employee/employee-thrust-distribution";
 import { GoalSummaryCards } from "@/components/employee/goal-summary-cards";
 import { WorkflowStepper } from "@/components/employee/workflow-stepper";
 import { GoalSheet } from "@/components/goals/goal-sheet";
@@ -61,7 +62,7 @@ export default async function EmployeeDashboard() {
 
   const { data: allGoals } = await supabase
     .from("goals")
-    .select("id, status, weightage, title, uom, target, target_date")
+    .select("id, status, weightage, title, uom, target, target_date, thrust_area")
     .eq("user_id", user.id);
 
   const { data: checkinGoals } = await supabase
@@ -271,7 +272,12 @@ export default async function EmployeeDashboard() {
               updates={updatesList}
               overallScore={overallScore}
             />
-            {scoreGoals.length > 0 ? <EmployeeQoqMiniChart points={qoqTrend} /> : null}
+            {scoreGoals.length > 0 ? (
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <EmployeeQoqMiniChart points={qoqTrend} />
+                <EmployeeThrustDistribution goals={scoreGoals} />
+              </div>
+            ) : null}
           </>
         }
         goals={

@@ -4,6 +4,8 @@ import { EmployeeGoalReview, ReviewGoal } from "@/components/manager/employee-go
 import { AnytimeFeedbackForm } from "@/components/manager/anytime-feedback-form";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase-server";
+import { EmployeeQoqMiniChart } from "@/components/employee/employee-qoq-mini-chart";
+import { buildEmployeeQoqTrend } from "@/lib/employee-qoq-trend";
 
 export default async function ManagerEmployeeReviewPage({
   params,
@@ -42,6 +44,23 @@ export default async function ManagerEmployeeReviewPage({
       title: goal.title,
     }));
 
+  const approvedGoalIds = approvedGoals.map((g) => g.id);
+
+  const { data: updates } = approvedGoalIds.length
+    ? await supabase
+        .from("quarterly_updates")
+        .select("goal_id, quarter, score, submitted_at, manager_feedback")
+        .in("goal_id", approvedGoalIds)
+    : { data: [] };
+
+  const scoreGoals = allGoals.map((g) => ({
+    id: g.id,
+    status: g.status ?? "draft",
+    weightage: Number(g.weightage) || 0,
+  }));
+
+  const qoqTrend = buildEmployeeQoqTrend(scoreGoals, updates ?? []);
+
   return (
     <DashboardShell
       title="Employee Goal Review"
@@ -50,6 +69,11 @@ export default async function ManagerEmployeeReviewPage({
       backLabel="Back to team"
     >
       <div className="space-y-6">
+        {qoqTrend.some((pt) => pt.score !== null) ? (
+          <div className="max-w-3xl">
+            <EmployeeQoqMiniChart points={qoqTrend} />
+          </div>
+        ) : null}
         <EmployeeGoalReview
           employee={employee}
           goals={submittedGoals}

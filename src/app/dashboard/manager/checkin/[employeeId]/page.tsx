@@ -8,6 +8,8 @@ import type { CheckinGoal } from "@/components/checkins/checkin-row";
 import { requireRole } from "@/lib/auth";
 import { getActiveWindow, type QuarterWindow } from "@/lib/get-active-window";
 import { createClient } from "@/lib/supabase-server";
+import { EmployeeQoqMiniChart } from "@/components/employee/employee-qoq-mini-chart";
+import { buildEmployeeQoqTrend } from "@/lib/employee-qoq-trend";
 
 export default async function ManagerEmployeeCheckinPage({
   params,
@@ -41,7 +43,7 @@ export default async function ManagerEmployeeCheckinPage({
 
   const { data: goals } = await supabase
     .from("goals")
-    .select("id, title, uom, target, target_date")
+    .select("id, title, uom, target, target_date, status, weightage")
     .eq("user_id", employeeId)
     .in("status", ["approved", "locked"])
     .order("created_at", { ascending: true });
@@ -58,6 +60,15 @@ export default async function ManagerEmployeeCheckinPage({
         .eq("quarter", activeWindow.quarter_name)
     : { data: [] };
 
+  const { data: allUpdates } = goalIds.length
+    ? await supabase
+        .from("quarterly_updates")
+        .select("goal_id, quarter, score, submitted_at")
+        .in("goal_id", goalIds)
+    : { data: [] };
+
+  const qoqTrend = buildEmployeeQoqTrend(goals ?? [], allUpdates ?? []);
+
   return (
     <DashboardShell
       title="Check-in Review"
@@ -65,12 +76,19 @@ export default async function ManagerEmployeeCheckinPage({
       backHref="/dashboard/manager"
       backLabel="Back to team"
     >
-      <EmployeeCheckinReview
-        employee={employee}
-        quarter={activeWindow.quarter_name}
-        goals={(goals ?? []) as CheckinGoal[]}
-        updates={(updates ?? []) as ManagerCheckinUpdate[]}
-      />
+      <div className="space-y-6">
+        {qoqTrend.some((pt) => pt.score !== null) ? (
+          <div className="max-w-3xl">
+            <EmployeeQoqMiniChart points={qoqTrend} />
+          </div>
+        ) : null}
+        <EmployeeCheckinReview
+          employee={employee}
+          quarter={activeWindow.quarter_name}
+          goals={(goals ?? []) as CheckinGoal[]}
+          updates={(updates ?? []) as ManagerCheckinUpdate[]}
+        />
+      </div>
     </DashboardShell>
   );
 }
