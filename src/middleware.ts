@@ -54,7 +54,9 @@ export async function middleware(request: NextRequest) {
   if (pathname === '/') {
     if (user) {
       const role = await getUserRole();
-      return NextResponse.redirect(new URL(`/dashboard/${role || 'employee'}`, request.url));
+      if (role) {
+        return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url));
+      }
     }
     // Guest users see the marketing landing page
   }
@@ -62,7 +64,9 @@ export async function middleware(request: NextRequest) {
   // Redirect logged-in users away from login page
   if (pathname === '/login' && user) {
     const role = await getUserRole();
-    return NextResponse.redirect(new URL(`/dashboard/${role || 'employee'}`, request.url));
+    if (role) {
+      return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url));
+    }
   }
 
   return supabaseResponse;
