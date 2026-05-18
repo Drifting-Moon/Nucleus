@@ -2,7 +2,7 @@
 
 **Enterprise Goal & Performance Management Platform**
 
-Built specifically for the **Atomquest Hackathon** (Atomberg problem statement), Nucleus is a comprehensive, role-based internal tool designed to streamline quarterly goal setting, manager reviews, and continuous performance feedback. 
+Nucleus is a comprehensive, role-based internal tool designed to streamline quarterly goal setting, manager reviews, and continuous performance feedback. 
 
 It completely replaces fragmented spreadsheets and legacy processes with a unified, transparent, and user-friendly dashboard.
 
@@ -16,11 +16,11 @@ It completely replaces fragmented spreadsheets and legacy processes with a unifi
 - **Quarterly Check-ins:** Structured pipelines for quarterly progress tracking and continuous feedback.
 - **Weighted Scoring Engine:** Real-time computation of individual and team performance scores based on goal achievement versus allocated weightage.
 - **Admin Analytics:** Comprehensive HR views including completion heatmaps, QoQ trends, manager effectiveness, and one-click data exports.
-- **Enterprise UI:** Built with an emphasis on "User Friendliness" (Evaluation Parameter #3), featuring dark mode, semantic charts, and built-in onboarding guides.
+- **Enterprise UI:** High-fidelity dashboard featuring dark mode, interactive charts, and intuitive onboarding guides.
 
 ## 🛠️ Technology Stack
 
-- **Frontend:** Next.js 16 (App Router), React, Tailwind CSS, Shadcn UI, Recharts
+- **Frontend:** Next.js (App Router), React, Tailwind CSS, Shadcn UI, Recharts
 - **Backend & Database:** Supabase (PostgreSQL)
 - **Authentication:** Supabase Native Auth
 - **Deployment:** Vercel
@@ -34,7 +34,7 @@ Nucleus is optimized for zero-configuration deployment on Vercel.
 1. **Push your code to GitHub.**
 2. Log into **Vercel** and click **Add New Project**.
 3. Import your GitHub repository.
-4. **Environment Variables:** Before clicking Deploy, you **must** add the following environment variables. You can find these in your Supabase project settings (`Project Settings > API`):
+4. **Environment Variables:** Before clicking Deploy, you **must** add the following environment variables:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 5. Click **Deploy**. Vercel will automatically detect the Next.js framework and build the project perfectly.
@@ -69,7 +69,7 @@ Nucleus is optimized for zero-configuration deployment on Vercel.
 
 ## 🧪 Quick Test Accounts
 
-The platform comes pre-configured with three robust personas for hackathon judges to evaluate:
+The platform comes pre-configured with three robust personas to evaluate the platform capabilities:
 
 | Role | Email | Password |
 |---|---|---|
