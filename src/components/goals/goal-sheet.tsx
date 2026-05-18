@@ -600,6 +600,14 @@ export function GoalSheet({ userId, goalSettingOpen }: GoalSheetProps) {
     setRejectionReason("");
     setSubmitting(false);
     setLastUpdatedAt(new Date().toISOString());
+
+    // Background notification trigger - completely safe, will not crash the app if fail
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, type: "submit" }),
+    }).catch((err) => console.error("[Notify] Submit notification error:", err));
+
     toast.success("Goals submitted. Waiting for manager review.");
     router.refresh();
   };

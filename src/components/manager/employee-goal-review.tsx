@@ -194,6 +194,14 @@ export function EmployeeGoalReview({
     );
     setApproveDialogOpen(false);
     setApproving(false);
+
+    // Background notification trigger - completely safe, will not crash the app if fail
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: employee.id, type: "approve" }),
+    }).catch((err) => console.error("[Notify] Approve notification error:", err));
+
     toast.success("Goals approved and locked.");
   };
 
@@ -243,6 +251,14 @@ export function EmployeeGoalReview({
     );
     setRejectDialogOpen(false);
     setRejecting(false);
+
+    // Background notification trigger - completely safe, will not crash the app if fail
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: employee.id, type: "reject", rejectionReason: rejectionReason }),
+    }).catch((err) => console.error("[Notify] Reject notification error:", err));
+
     toast.success("Goals returned for rework.");
   };
 
