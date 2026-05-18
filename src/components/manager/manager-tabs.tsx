@@ -17,7 +17,7 @@ import type {
   StatusChartRow,
 } from "@/lib/manager/team-chart-data";
 import { cn } from "@/lib/utils";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { ArchitectureDiagramCard } from "@/components/shared/architecture-diagram-card";
 
 
 const TABS = [
@@ -98,30 +98,12 @@ export function ManagerTabs({
           </div>
           <TeamOverview members={members} teamAvgScore={teamAvgScore} />
           
-          <Card className="mt-6 border border-border/80 shadow-sm bg-card overflow-hidden">
-            <CardHeader className="pb-3 border-b border-border/10 bg-muted/20">
-              <CardTitle className="text-sm font-semibold tracking-wide text-foreground">
-                Manager Review & Verification Architecture
-              </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground">
-                Live visual telemetry mapping the manager validation layer, weight adjustment rules, and return-for-rework workflow logic.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 md:p-6 bg-muted/5 flex justify-center items-center">
-              <div className="relative w-full overflow-hidden rounded-lg border border-border/40 bg-muted/20 p-2 flex justify-center items-center">
-                <img
-                  src="/arch/white-manager.png"
-                  alt="Nucleus Manager Architecture Flow (Light)"
-                  className="block dark:hidden max-w-full h-auto max-h-[500px] object-contain rounded-md transition-all hover:scale-[1.01]"
-                />
-                <img
-                  src="/arch/black-manager.png"
-                  alt="Nucleus Manager Architecture Flow (Dark)"
-                  className="hidden dark:block max-w-full h-auto max-h-[500px] object-contain rounded-md transition-all hover:scale-[1.01]"
-                />
-              </div>
-            </CardContent>
-          </Card>
+          <ArchitectureDiagramCard
+            lightSrc="/arch/white-manager.png"
+            darkSrc="/arch/black-manager.png"
+            title="Manager Review & Verification Architecture"
+            description="Interactive visual telemetry mapping the manager validation layer, weight adjustment rules, and return-for-rework workflow logic."
+          />
         </div>
       )}
 

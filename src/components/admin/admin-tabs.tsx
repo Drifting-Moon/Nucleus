@@ -20,7 +20,8 @@ import {
 } from "@/components/admin/org-hierarchy-form";
 import { UnlockTool, type EmployeeWithLockedGoals } from "@/components/admin/unlock-tool";
 import { ClipboardList, CheckCircle2 } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { ArchitectureDiagramCard } from "@/components/shared/architecture-diagram-card";
+import { Card } from "@/components/ui/card";
 
 
 const AnalyticsDashboard = dynamic(
@@ -291,30 +292,12 @@ export function AdminTabs({
           )}
           <CompletionDashboard employees={employeeRows} managers={managerRows} />
 
-          <Card className="mt-6 border border-border/80 shadow-sm bg-card overflow-hidden">
-            <CardHeader className="pb-3 border-b border-border/10 bg-muted/20">
-              <CardTitle className="text-sm font-semibold tracking-wide text-foreground">
-                Governance, Admin Planning & System Audit Architecture
-              </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground">
-                Live visual telemetry mapping admin cycle scheduling, skip-level routing logic, and PostgreSQL audit logger transactions.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-4 md:p-6 bg-muted/5 flex justify-center items-center">
-              <div className="relative w-full overflow-hidden rounded-lg border border-border/40 bg-muted/20 p-2 flex justify-center items-center">
-                <img
-                  src="/arch/white-admin.png"
-                  alt="Nucleus Admin Architecture Flow (Light)"
-                  className="block dark:hidden max-w-full h-auto max-h-[500px] object-contain rounded-md transition-all hover:scale-[1.01]"
-                />
-                <img
-                  src="/arch/black-admin.png"
-                  alt="Nucleus Admin Architecture Flow (Dark)"
-                  className="hidden dark:block max-w-full h-auto max-h-[500px] object-contain rounded-md transition-all hover:scale-[1.01]"
-                />
-              </div>
-            </CardContent>
-          </Card>
+          <ArchitectureDiagramCard
+            lightSrc="/arch/white-admin.png"
+            darkSrc="/arch/black-admin.png"
+            title="Governance, Admin Planning & System Audit Architecture"
+            description="Interactive visual telemetry mapping admin cycle scheduling, skip-level routing logic, and PostgreSQL audit logger transactions."
+          />
         </div>
       )}
       {active === "people" && (
