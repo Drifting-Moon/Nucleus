@@ -57,6 +57,8 @@ next-env.d.ts
 .atomquest_roadmap.md
 docs/
 PROJECT_STATUS.md
+nucleus_architecture_diagram1.svg
+public/nucleus_architecture_diagram1.svg
 
 # Supabase local state
 supabase/.temp/

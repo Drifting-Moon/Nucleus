@@ -52,12 +52,11 @@ export async function middleware(request: NextRequest) {
 
   // Redirect root
   if (pathname === '/') {
-    if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url));
+    if (user) {
+      const role = await getUserRole();
+      return NextResponse.redirect(new URL(`/dashboard/${role || 'employee'}`, request.url));
     }
-
-    const role = await getUserRole();
-    return NextResponse.redirect(new URL(`/dashboard/${role || 'employee'}`, request.url));
+    // Guest users see the marketing landing page
   }
 
   // Redirect logged-in users away from login page
