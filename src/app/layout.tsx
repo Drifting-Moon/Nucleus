@@ -18,6 +18,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Nucleus",
   description: "Role-based performance goals portal",
+  icons: {
+    icon: "/logo.svg.webp",
+  },
 };
 
 export default function RootLayout({
