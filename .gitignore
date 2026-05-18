@@ -58,6 +58,8 @@ next-env.d.ts
 docs/
 PROJECT_STATUS.md
 PRODUCT_SUMMARY.md
+/arch
+/public/arch
 nucleus_architecture_diagram1.svg
 public/nucleus_architecture_diagram1.svg
 

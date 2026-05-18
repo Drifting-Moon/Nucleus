@@ -30,6 +30,8 @@ import {
 import { buildFeedbackTimelineEntries } from "@/lib/build-feedback-timeline";
 import { createClient } from "@/lib/supabase-server";
 import { AlertTriangle } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+
 
 const employeeSteps = [
   {
@@ -278,6 +280,31 @@ export default async function EmployeeDashboard() {
                 <EmployeeThrustDistribution goals={scoreGoals} />
               </div>
             ) : null}
+
+            <Card className="mt-6 border border-border/80 shadow-sm bg-card overflow-hidden">
+              <CardHeader className="pb-3 border-b border-border/10 bg-muted/20">
+                <CardTitle className="text-sm font-semibold tracking-wide text-foreground">
+                  Employee Goal Alignment & Lifecycle Architecture
+                </CardTitle>
+                <CardDescription className="text-xs text-muted-foreground">
+                  Live data telemetry showing the workflow stages from Draft to Manager-Locked check-in synchronization.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-4 md:p-6 bg-muted/5 flex justify-center items-center">
+                <div className="relative w-full overflow-hidden rounded-lg border border-border/40 bg-muted/20 p-2 flex justify-center items-center">
+                  <img
+                    src="/arch/white-emplyee.png"
+                    alt="Nucleus Employee Architecture Flow (Light)"
+                    className="block dark:hidden max-w-full h-auto max-h-[500px] object-contain rounded-md transition-all hover:scale-[1.01]"
+                  />
+                  <img
+                    src="/arch/black-employee.png"
+                    alt="Nucleus Employee Architecture Flow (Dark)"
+                    className="hidden dark:block max-w-full h-auto max-h-[500px] object-contain rounded-md transition-all hover:scale-[1.01]"
+                  />
+                </div>
+              </CardContent>
+            </Card>
           </>
         }
         goals={
