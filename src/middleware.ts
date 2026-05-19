@@ -50,25 +50,6 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Redirect root
-  if (pathname === '/') {
-    if (user) {
-      const role = await getUserRole();
-      if (role) {
-        return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url));
-      }
-    }
-    // Guest users see the marketing landing page
-  }
-
-  // Redirect logged-in users away from login page
-  if (pathname === '/login' && user) {
-    const role = await getUserRole();
-    if (role) {
-      return NextResponse.redirect(new URL(`/dashboard/${role}`, request.url));
-    }
-  }
-
   return supabaseResponse;
 }
 
