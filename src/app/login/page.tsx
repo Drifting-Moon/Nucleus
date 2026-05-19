@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ArrowLeft } from "lucide-react";
 
 const loginTypes = [
   { label: "Employee", email: "employee@test.com" },
@@ -135,11 +137,17 @@ export default function LoginPage() {
               />
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex flex-col gap-3">
             <Button type="submit" className="flex items-center justify-center gap-2 w-full" disabled={loading}>
               {loading && <span className="size-4 rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground animate-spin" />}
               {loading ? "Authenticating..." : "Sign in"}
             </Button>
+            <Link
+              href="/"
+              className="text-xs text-muted-foreground hover:text-foreground transition flex items-center justify-center gap-1 mt-1"
+            >
+              <ArrowLeft className="size-3" /> Back to Home Page
+            </Link>
           </CardFooter>
         </form>
       </Card>
