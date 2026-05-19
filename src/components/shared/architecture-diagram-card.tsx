@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { ZoomIn, ZoomOut, Maximize2, Minimize2, RefreshCw, X } from "lucide-react";
+import { Maximize2, Minimize2, X } from "lucide-react";
 
 type ArchitectureDiagramCardProps = {
   lightSrc: string;
@@ -56,20 +56,20 @@ export function ArchitectureDiagramCard({
     setIsFullscreen(!isFullscreen);
   };
 
+  const handleActionSelect = (action: string) => {
+    if (action === "in") {
+      handleZoomIn();
+    } else if (action === "out") {
+      handleZoomOut();
+    } else if (action === "reset") {
+      handleReset();
+    }
+  };
+
   // Reusable zoom control panel
   const renderControls = (isCompact = false) => (
     <div className="flex items-center gap-2 flex-wrap">
-      <button
-        onClick={handleZoomOut}
-        disabled={zoom === ZOOM_OPTIONS[0]}
-        className="p-1.5 rounded border border-border hover:bg-muted text-muted-foreground disabled:opacity-40 transition-colors bg-background"
-        title="Zoom Out"
-        type="button"
-      >
-        <ZoomOut className="h-3.5 w-3.5" />
-      </button>
-
-      {/* Styled Select Dropdown */}
+      {/* 1. Scale Dropdown Selector */}
       <div className="relative">
         <select
           value={zoom}
@@ -89,29 +89,41 @@ export function ArchitectureDiagramCard({
         </div>
       </div>
 
-      <button
-        onClick={handleZoomIn}
-        disabled={zoom === ZOOM_OPTIONS[ZOOM_OPTIONS.length - 1]}
-        className="p-1.5 rounded border border-border hover:bg-muted text-muted-foreground disabled:opacity-40 transition-colors bg-background"
-        title="Zoom In"
-        type="button"
-      >
-        <ZoomIn className="h-3.5 w-3.5" />
-      </button>
+      {/* 2. Zoom Actions Dropdown (Zoom In / Zoom Out / Reset) */}
+      <div className="relative">
+        <select
+          value=""
+          onChange={(e) => {
+            handleActionSelect(e.target.value);
+            e.target.value = ""; // immediately reset select choice back to placeholder
+          }}
+          className="appearance-none bg-background border border-border rounded px-2.5 py-1 pr-7 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+        >
+          <option value="" disabled>
+            Zoom Actions
+          </option>
+          <option value="in" disabled={zoom === ZOOM_OPTIONS[ZOOM_OPTIONS.length - 1]}>
+            Zoom In (+)
+          </option>
+          <option value="out" disabled={zoom === ZOOM_OPTIONS[0]}>
+            Zoom Out (-)
+          </option>
+          <option value="reset">
+            Reset View
+          </option>
+        </select>
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-muted-foreground border-l border-border/50">
+          <svg className="fill-current h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+          </svg>
+        </div>
+      </div>
 
-      <button
-        onClick={handleReset}
-        className="p-1.5 rounded border border-border hover:bg-muted text-muted-foreground transition-colors bg-background"
-        title="Reset Zoom"
-        type="button"
-      >
-        <RefreshCw className="h-3.5 w-3.5" />
-      </button>
-
+      {/* 3. Fullscreen Button (Only shown on non-compact card view) */}
       {!isCompact && (
         <button
           onClick={toggleFullscreen}
-          className="p-1.5 rounded border border-border hover:bg-muted text-muted-foreground transition-colors bg-background flex items-center gap-1 text-xs font-medium px-2.5"
+          className="p-1.5 rounded border border-border hover:bg-muted text-muted-foreground transition-colors bg-background flex items-center gap-1 text-xs font-medium px-2.5 shadow-sm"
           title={isFullscreen ? "Close Fullscreen" : "Open Fullscreen"}
           type="button"
         >
@@ -145,7 +157,7 @@ export function ArchitectureDiagramCard({
             </CardDescription>
           </div>
 
-          {/* Render regular zoom and fullscreen controls */}
+          {/* Render both presets and action dropdown controls */}
           {renderControls(false)}
         </CardHeader>
 
