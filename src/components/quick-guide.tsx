@@ -14,9 +14,10 @@ interface QuickGuideProps {
   role: "Employee" | "Manager" | "Admin";
   steps: Step[];
   defaultOpen?: boolean;
+  children?: React.ReactNode;
 }
 
-export function QuickGuide({ role, steps, defaultOpen = true }: QuickGuideProps) {
+export function QuickGuide({ role, steps, defaultOpen = true, children }: QuickGuideProps) {
   const [open, setOpen] = useState(defaultOpen);
 
   return (
@@ -37,19 +38,22 @@ export function QuickGuide({ role, steps, defaultOpen = true }: QuickGuideProps)
           />
         </button>
         {open ? (
-          <ul className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
-            {steps.map((step, index) => (
-              <li key={index} className="flex flex-col gap-1">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                    {index + 1}
-                  </span>
-                  {step.title}
-                </div>
-                <p className="pl-7 text-xs text-muted-foreground">{step.description}</p>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+              {steps.map((step, index) => (
+                <li key={index} className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                      {index + 1}
+                    </span>
+                    {step.title}
+                  </div>
+                  <p className="pl-7 text-xs text-muted-foreground">{step.description}</p>
+                </li>
+              ))}
+            </ul>
+            {children}
+          </>
         ) : null}
       </CardContent>
     </Card>
