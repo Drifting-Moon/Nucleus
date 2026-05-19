@@ -20,7 +20,7 @@ import {
 } from "@/components/admin/org-hierarchy-form";
 import { UnlockTool, type EmployeeWithLockedGoals } from "@/components/admin/unlock-tool";
 import { ClipboardList, CheckCircle2 } from "lucide-react";
-import { ArchitectureDiagramCard } from "@/components/shared/architecture-diagram-card";
+
 import { Card } from "@/components/ui/card";
 
 
@@ -292,12 +292,7 @@ export function AdminTabs({
           )}
           <CompletionDashboard employees={employeeRows} managers={managerRows} />
 
-          <ArchitectureDiagramCard
-            lightSrc="/arch/white-admin.png"
-            darkSrc="/arch/black-admin.png"
-            title="Governance, Admin Planning & System Audit Architecture"
-            description="Interactive visual telemetry mapping admin cycle scheduling, skip-level routing logic, and PostgreSQL audit logger transactions."
-          />
+
         </div>
       )}
       {active === "people" && (

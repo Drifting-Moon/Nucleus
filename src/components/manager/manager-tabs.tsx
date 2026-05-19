@@ -17,7 +17,7 @@ import type {
   StatusChartRow,
 } from "@/lib/manager/team-chart-data";
 import { cn } from "@/lib/utils";
-import { ArchitectureDiagramCard } from "@/components/shared/architecture-diagram-card";
+
 
 
 const TABS = [
@@ -98,12 +98,7 @@ export function ManagerTabs({
           </div>
           <TeamOverview members={members} teamAvgScore={teamAvgScore} />
           
-          <ArchitectureDiagramCard
-            lightSrc="/arch/white-manager.png"
-            darkSrc="/arch/black-manager.png"
-            title="Manager Review & Verification Architecture"
-            description="Interactive visual telemetry mapping the manager validation layer, weight adjustment rules, and return-for-rework workflow logic."
-          />
+
         </div>
       )}
 

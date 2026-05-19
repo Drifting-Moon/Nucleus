@@ -266,25 +266,7 @@ export default async function EmployeeDashboard() {
         tabBadges={tabBadges}
         overview={
           <>
-            <QuickGuide role="Employee" steps={employeeSteps} defaultOpen={false}>
-              <div className="mt-6 pt-6 border-t border-border/40">
-                <p className="text-xs text-muted-foreground mb-4 italic font-medium">
-                  Your complete goal journey — from first draft to annual review score.
-                </p>
-                <div className="w-full overflow-x-auto">
-                  <img
-                    src="/arch/white-emplyee.png"
-                    alt="Employee Goal Alignment & Lifecycle Architecture (Light)"
-                    className="block dark:hidden w-full h-auto object-contain rounded-md min-w-[700px]"
-                  />
-                  <img
-                    src="/arch/black-employee.png"
-                    alt="Employee Goal Alignment & Lifecycle Architecture (Dark)"
-                    className="hidden dark:block w-full h-auto object-contain rounded-md min-w-[700px]"
-                  />
-                </div>
-              </div>
-            </QuickGuide>
+            <QuickGuide role="Employee" steps={employeeSteps} defaultOpen={false} />
             <WorkflowStepper goals={workflowGoals} quarterSubmitted={quarterSubmitted} />
             <GoalSummaryCards
               goals={summaryGoals}
